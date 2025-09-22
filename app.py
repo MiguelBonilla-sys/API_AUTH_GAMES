@@ -65,8 +65,8 @@ app = FastAPI(
     description="Gateway de autenticación para la API de videojuegos",
     version=APP_VERSION,
     lifespan=lifespan,
-    docs_url="/docs" if not is_production() else None,
-    redoc_url="/redoc" if not is_production() else None
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # Middleware para logging de endpoints
@@ -202,6 +202,22 @@ async def health_check():
                 "timestamp": datetime.utcnow().isoformat()
             }
         )
+
+
+@app.get("/docs-protected", summary="Documentación Protegida", description="Documentación de la API con autenticación")
+async def protected_docs():
+    """
+    Documentación protegida de la API.
+    """
+    from fastapi.responses import HTMLResponse
+    from fastapi.openapi.docs import get_swagger_ui_html
+    
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Documentación",
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css",
+    )
 
 
 @app.get("/ready", summary="Readiness Check", description="Verificar si la aplicación está lista para recibir tráfico")
