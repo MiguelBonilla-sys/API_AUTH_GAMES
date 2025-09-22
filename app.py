@@ -1,6 +1,6 @@
 """
 Aplicación principal FastAPI para el gateway de autenticación.
-Configuración básica para testing de los endpoints implementados.
+Configuración optimizada para desarrollo y Railway.
 """
 
 from fastapi import FastAPI, HTTPException, Request
@@ -11,14 +11,19 @@ import os
 import time
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from src.config import init_db, close_db
+from src.config.settings import get_settings, is_production, is_development
 from src.routers import auth_router, admin_router, videojuegos_router, desarrolladoras_router
 from src.schemas import ErrorResponse
 
+# Obtener configuración
+settings = get_settings()
+
 # Constantes
-APP_NAME = "API Auth Gateway"
-APP_VERSION = "1.0.0"
+APP_NAME = settings.app_name
+APP_VERSION = settings.app_version
 
 # Configurar logger para endpoints
 endpoint_logger = logging.getLogger("endpoints")
@@ -59,7 +64,9 @@ app = FastAPI(
     title=APP_NAME,
     description="Gateway de autenticación para la API de videojuegos",
     version=APP_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs" if not is_production() else None,
+    redoc_url="/redoc" if not is_production() else None
 )
 
 # Middleware para logging de endpoints
@@ -91,7 +98,7 @@ async def log_requests(request: Request, call_next):
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,7 +114,7 @@ app.include_router(desarrolladoras_router)
 @app.get("/", summary="Health Check", description="Verificar estado de la aplicación")
 async def root():
     """
-    Endpoint de health check.
+    Endpoint de health check básico.
     """
     return {
         "success": True,
@@ -115,34 +122,127 @@ async def root():
         "data": {
             "service": APP_NAME,
             "version": APP_VERSION,
-            "status": "healthy"
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat()
         },
-        "timestamp": None
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 
 @app.get("/health", summary="Health Check Detallado", description="Verificar estado detallado de la aplicación")
 async def health_check():
     """
-    Health check detallado.
+    Health check detallado para Railway y Docker.
     """
-    return {
-        "success": True,
-        "message": "Servicio funcionando correctamente",
-        "data": {
-            "service": APP_NAME,
-            "version": APP_VERSION,
-            "status": "healthy",
-            "database": "connected",
-            "endpoints": {
-                "auth": "/auth/",
-                "admin": "/admin/",
-                "videojuegos": "/api/videojuegos/",
-                "desarrolladoras": "/api/desarrolladoras/"
+    try:
+        # Verificar estado de la base de datos
+        db_status = "connected"
+        try:
+            from src.config.database import engine
+            async with engine.begin() as conn:
+                await conn.execute("SELECT 1")
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+        
+        # Verificar estado de la API Flask externa
+        flask_status = "unknown"
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"{settings.flask_api_url}/health")
+                if response.status_code == 200:
+                    flask_status = "connected"
+                else:
+                    flask_status = f"error: {response.status_code}"
+        except Exception as e:
+            flask_status = f"error: {str(e)}"
+        
+        # Determinar estado general
+        overall_status = "healthy"
+        if "error" in db_status or "error" in flask_status:
+            overall_status = "degraded"
+        
+        return {
+            "success": True,
+            "message": "Servicio funcionando correctamente",
+            "data": {
+                "service": APP_NAME,
+                "version": APP_VERSION,
+                "environment": settings.environment,
+                "status": overall_status,
+                "timestamp": datetime.utcnow().isoformat(),
+                "checks": {
+                    "database": db_status,
+                    "flask_api": flask_status,
+                    "uptime": "running"
+                },
+                "endpoints": {
+                    "auth": "/auth/",
+                    "admin": "/admin/",
+                    "videojuegos": "/api/videojuegos/",
+                    "desarrolladoras": "/api/desarrolladoras/"
+                }
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "message": "Health check failed",
+                "data": {
+                    "service": APP_NAME,
+                    "version": APP_VERSION,
+                    "status": "unhealthy",
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat()
+                },
+                "timestamp": datetime.utcnow().isoformat()
             }
-        },
-        "timestamp": None
-    }
+        )
+
+
+@app.get("/ready", summary="Readiness Check", description="Verificar si la aplicación está lista para recibir tráfico")
+async def readiness_check():
+    """
+    Readiness check para Kubernetes/Docker.
+    """
+    try:
+        # Verificar base de datos
+        from src.config.database import engine
+        async with engine.begin() as conn:
+            await conn.execute("SELECT 1")
+        
+        return {
+            "success": True,
+            "message": "Application is ready",
+            "data": {
+                "service": APP_NAME,
+                "version": APP_VERSION,
+                "status": "ready",
+                "timestamp": datetime.utcnow().isoformat()
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "message": "Application is not ready",
+                "data": {
+                    "service": APP_NAME,
+                    "version": APP_VERSION,
+                    "status": "not_ready",
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat()
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
 
 
 # Manejo global de errores
@@ -157,7 +257,7 @@ async def http_exception_handler(request, exc):
             "success": False,
             "message": exc.detail,
             "data": None,
-            "timestamp": None
+            "timestamp": datetime.utcnow().isoformat()
         }
     )
 
@@ -173,20 +273,23 @@ async def general_exception_handler(request, exc):
             "success": False,
             "message": "Error interno del servidor",
             "data": None,
-            "timestamp": None
+            "timestamp": datetime.utcnow().isoformat()
         }
     )
 
 
 if __name__ == "__main__":
-    # Configuración para desarrollo
+    # Configuración automática para desarrollo/producción
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    
     uvicorn.run(
         "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info",
-        access_log=False,  # Usamos middleware personalizado para logs más limpios
-        reload_includes=["*.py"],  # Solo recargar archivos Python
-        reload_excludes=["tests/*", "Test/*", "*.pyc", "__pycache__"]  # Excluir archivos innecesarios
+        host=host,
+        port=port,
+        reload=is_development(),
+        log_level=settings.log_level.lower(),
+        access_log=not is_development(),  # Usar middleware personalizado en desarrollo
+        reload_includes=["*.py"] if is_development() else None,
+        reload_excludes=["tests/*", "Test/*", "*.pyc", "__pycache__"] if is_development() else None
     )

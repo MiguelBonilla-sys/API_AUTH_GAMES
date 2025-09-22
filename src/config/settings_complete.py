@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # CONFIGURACIÓN DE BASE DE DATOS
     # ==========================================
     database_url: str = Field(
-        default="postgresql+asyncpg://postgres:password@localhost:5432/api_auth_games",
+        default_factory=lambda: os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5432/api_auth_games"),
         description="URL de conexión a PostgreSQL"
     )
     
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     # CONFIGURACIÓN DE SERVIDOR
     # ==========================================
     host: str = Field(default="0.0.0.0", description="Host del servidor")
-    port: int = Field(default=8000, description="Puerto del servidor")
+    port: int = Field(default_factory=lambda: int(os.getenv("PORT", 8000)), description="Puerto del servidor")
     workers: int = Field(default=4, description="Número de workers para producción")
     
     # ==========================================
