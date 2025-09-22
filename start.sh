@@ -9,6 +9,13 @@ export PORT=${PORT:-8000}
 export ENVIRONMENT=${ENVIRONMENT:-production}
 export DEBUG=${DEBUG:-false}
 
+# Corregir URL de base de datos si es necesario
+if [[ -n "$DATABASE_URL" && "$DATABASE_URL" == postgresql://* && "$DATABASE_URL" != *"+asyncpg"* ]]; then
+    echo "🔧 Corrigiendo URL de base de datos..."
+    export DATABASE_URL="${DATABASE_URL/postgresql:\/\//postgresql+asyncpg:\/\/}"
+    echo "✅ URL corregida para usar asyncpg"
+fi
+
 echo "📊 Configuración:"
 echo "   Host: $HOST"
 echo "   Port: $PORT"
