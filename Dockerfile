@@ -18,11 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Verificar que psycopg2 esté instalado
 RUN python -c "import psycopg2; print('psycopg2 instalado correctamente')"
 
-# Verificar configuración de base de datos
-RUN python check_db.py
-
 # Copiar código fuente
 COPY . .
+
+# Verificar configuración de base de datos
+RUN python check_db.py
 
 # Hacer ejecutable el script de inicio
 RUN chmod +x start.sh
