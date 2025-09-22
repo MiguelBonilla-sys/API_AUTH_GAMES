@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="API Auth Gateway", description="Nombre de la aplicación")
     app_version: str = Field(default="1.0.0", description="Versión de la aplicación")
     environment: str = Field(default="development", description="Entorno de ejecución")
-    debug: bool = Field(default=True, description="Modo debug")
+    debug: bool = Field(default=False, description="Modo debug")
     
     # Configuración de base de datos
     database_url: str = Field(

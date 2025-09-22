@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
 import os
+import logging
 from typing import AsyncGenerator
 
 # Importar configuración
@@ -16,10 +17,26 @@ from .settings import get_settings
 settings = get_settings()
 DATABASE_URL = settings.database_url
 
+# Configurar logging de SQLAlchemy
+def configure_sqlalchemy_logging():
+    """Configurar el nivel de logging de SQLAlchemy."""
+    # Silenciar logs verbosos de SQLAlchemy siempre, excepto en debug explícito
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
+    
+    # Solo permitir logs SQL si está explícitamente habilitado el debug
+    if settings.debug and settings.environment == "development":
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+# Configurar logging al importar
+configure_sqlalchemy_logging()
+
 # Crear engine async para PostgreSQL
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,  # Log SQL queries en desarrollo
+    echo=False,  # Deshabilitado para evitar logs verbosos
     pool_pre_ping=True,  # Verificar conexiones antes de usar
     pool_recycle=300,  # Reciclar conexiones cada 5 minutos
 )
@@ -73,4 +90,8 @@ async def close_db() -> None:
     Cerrar conexiones de base de datos.
     Debe ser llamado al cerrar la aplicación.
     """
-    await engine.dispose()
+    try:
+        await engine.dispose()
+    except Exception:
+        # Silenciar errores durante el cierre, especialmente en hot reload
+        pass

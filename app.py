@@ -3,11 +3,13 @@ Aplicación principal FastAPI para el gateway de autenticación.
 Configuración básica para testing de los endpoints implementados.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import os
+import time
+import logging
 from contextlib import asynccontextmanager
 
 from src.config import init_db, close_db
@@ -18,6 +20,15 @@ from src.schemas import ErrorResponse
 APP_NAME = "API Auth Gateway"
 APP_VERSION = "1.0.0"
 
+# Configurar logger para endpoints
+endpoint_logger = logging.getLogger("endpoints")
+endpoint_logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - 🌐 %(message)s', datefmt='%H:%M:%S')
+handler.setFormatter(formatter)
+endpoint_logger.addHandler(handler)
+endpoint_logger.propagate = False
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,15 +36,22 @@ async def lifespan(app: FastAPI):
     Gestión del ciclo de vida de la aplicación.
     Inicializa y cierra la base de datos.
     """
-    # Inicializar base de datos
-    await init_db()
-    print("✅ Base de datos inicializada")
-    
-    yield
-    
-    # Cerrar base de datos
-    await close_db()
-    print("✅ Base de datos cerrada")
+    try:
+        # Inicializar base de datos
+        await init_db()
+        print("✅ Base de datos inicializada")
+        
+        yield
+        
+    except Exception as e:
+        print(f"⚠️ Error durante el ciclo de vida: {e}")
+    finally:
+        try:
+            # Cerrar base de datos
+            await close_db()
+            print("✅ Base de datos cerrada")
+        except Exception as e:
+            print(f"⚠️ Error al cerrar base de datos: {e}")
 
 
 # Crear aplicación FastAPI
@@ -43,6 +61,32 @@ app = FastAPI(
     version=APP_VERSION,
     lifespan=lifespan
 )
+
+# Middleware para logging de endpoints
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Log del request
+    endpoint_logger.info(f"{request.method} {request.url.path} - Usuario: {request.client.host}")
+    
+    # Procesar request
+    response = await call_next(request)
+    
+    # Log del response
+    process_time = time.time() - start_time
+    
+    # Determinar emoji según status code
+    if 200 <= response.status_code < 300:
+        status_emoji = "✅"
+    elif response.status_code >= 400:
+        status_emoji = "❌"
+    else:
+        status_emoji = "⚠️"
+    
+    endpoint_logger.info(f"{status_emoji} {request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
+    
+    return response
 
 # Configurar CORS
 app.add_middleware(
@@ -141,5 +185,8 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_level="info"
+        log_level="info",
+        access_log=False,  # Usamos middleware personalizado para logs más limpios
+        reload_includes=["*.py"],  # Solo recargar archivos Python
+        reload_excludes=["tests/*", "Test/*", "*.pyc", "__pycache__"]  # Excluir archivos innecesarios
     )
