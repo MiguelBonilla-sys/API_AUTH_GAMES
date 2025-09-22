@@ -181,6 +181,13 @@ async def health_check():
                     "admin": "/admin/",
                     "videojuegos": "/api/videojuegos/",
                     "desarrolladoras": "/api/desarrolladoras/"
+                },
+                "documentation": {
+                    "swagger": "/docs",
+                    "redoc": "/redoc",
+                    "scalar": "/scalar",
+                    "protected_docs": "/docs-protected",
+                    "openapi_json": "/openapi.json"
                 }
             },
             "timestamp": datetime.utcnow().isoformat()
@@ -218,6 +225,83 @@ async def protected_docs():
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css",
     )
+
+
+@app.get("/scalar", summary="Documentación Scalar", description="Documentación moderna con Scalar")
+async def scalar_docs():
+    """
+    Documentación moderna de la API usando Scalar.
+    """
+    from fastapi.responses import HTMLResponse
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>{APP_NAME} - Scalar Documentation</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.2.0/dist/browser/standalone.css" />
+    </head>
+    <body>
+        <script 
+            id="api-reference" 
+            type="application/json"
+            data-configuration='{{
+                "theme": "purple",
+                "layout": "modern",
+                "showSidebar": true,
+                "hideDownloadButton": false,
+                "hideTryItPanel": false,
+                "hideSchemaPattern": false,
+                "hideSearch": false,
+                "hideInfo": false,
+                "hideServers": false,
+                "hideModels": false,
+                "hideAuthentication": false,
+                "hideRequestSample": false,
+                "hideResponseSample": false,
+                "hideTryItPanel": false,
+                "hideDownloadButton": false,
+                "hideSearch": false,
+                "hideInfo": false,
+                "hideServers": false,
+                "hideModels": false,
+                "hideAuthentication": false,
+                "hideRequestSample": false,
+                "hideResponseSample": false
+            }}'
+        ></script>
+        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.2.0/dist/browser/standalone.js"></script>
+        <script>
+            var configuration = {{
+                spec: {{
+                    url: '{app.openapi_url}',
+                }},
+                theme: 'purple',
+                layout: 'modern',
+                showSidebar: true,
+                hideDownloadButton: false,
+                hideTryItPanel: false,
+                hideSchemaPattern: false,
+                hideSearch: false,
+                hideInfo: false,
+                hideServers: false,
+                hideModels: false,
+                hideAuthentication: false,
+                hideRequestSample: false,
+                hideResponseSample: false
+            }};
+            
+            ScalarApiReference({{
+                ...configuration
+            }});
+        </script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/ready", summary="Readiness Check", description="Verificar si la aplicación está lista para recibir tráfico")
