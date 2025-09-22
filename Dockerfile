@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código fuente
 COPY . .
 
+# Hacer ejecutable el script de inicio
+RUN chmod +x start.sh
+
 # Crear usuario no-root para seguridad
 RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
@@ -33,7 +36,7 @@ ENV PORT=8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=10)"
+    CMD python -c "import httpx; import os; httpx.get(f'http://localhost:{os.getenv(\"PORT\", \"8000\")}/health', timeout=10)"
 
 # Comando de inicio
-CMD ["gunicorn", "app:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+CMD ["./start.sh"]
