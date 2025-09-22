@@ -4,11 +4,12 @@ Implementa login, registro, renovación de tokens y logout con validación de ro
 """
 
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from src.config import get_db
 from src.models import User, Role
@@ -176,8 +177,11 @@ async def login(
         HTTPException: Si las credenciales son inválidas
     """
     try:
-        # Buscar usuario por email
-        user = await get_user_by_email(db, request.email)
+        # Buscar usuario por email con su rol
+        result = await db.execute(
+            select(User).options(selectinload(User.role)).where(User.email == request.email)
+        )
+        user = result.scalar_one_or_none()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -550,7 +554,7 @@ async def change_password(
     description="Analiza la fortaleza de una contraseña sin almacenarla"
 )
 async def check_password_strength(
-    password: str,
+    request: Dict[str, str],
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -565,6 +569,14 @@ async def check_password_strength(
     """
     try:
         from src.auth.password import get_password_strength
+        
+        # Extraer contraseña del request
+        password = request.get("password", "")
+        if not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El campo 'password' es requerido"
+            )
         
         # Analizar fortaleza de la contraseña
         strength = get_password_strength(password)

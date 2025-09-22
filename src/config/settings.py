@@ -4,8 +4,12 @@ Maneja variables de entorno y configuraciones por defecto.
 """
 
 import os
-from typing import List, Optional
-from pydantic import BaseSettings, Field, validator
+from typing import List, Optional, Union, Any
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Constantes para configuración por defecto
+DEFAULT_CORS_ORIGINS = ["http://localhost:3000", "http://localhost:8000"]
 
 
 class Settings(BaseSettings):
@@ -21,7 +25,7 @@ class Settings(BaseSettings):
     
     # Configuración de base de datos
     database_url: str = Field(
-        default="postgresql+psycopg://user:password@localhost:5432/api_auth_games",
+        default="postgresql+asyncpg://postgres:UZztcpwvymcUOjHbKLiHJCezPAmkpTON@metro.proxy.rlwy.net:43514/railway",
         description="URL de conexión a PostgreSQL"
     )
     
@@ -47,8 +51,8 @@ class Settings(BaseSettings):
     )
     
     # Configuración de CORS
-    cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"],
+    cors_origins: str = Field(
+        default=",".join(DEFAULT_CORS_ORIGINS),
         description="Orígenes permitidos para CORS"
     )
     
@@ -77,13 +81,6 @@ class Settings(BaseSettings):
             raise ValueError('JWT secret key must be at least 32 characters long')
         return v
     
-    @validator('cors_origins', pre=True)
-    def parse_cors_origins(cls, v):
-        """Parsear orígenes CORS desde string separado por comas."""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
-        return v
-    
     @validator('log_level')
     def validate_log_level(cls, v):
         """Validar nivel de logging."""
@@ -96,6 +93,17 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Ignorar campos extra en lugar de rechazarlos
+        
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Obtener la lista de orígenes CORS."""
+        if isinstance(self.cors_origins, str):
+            if not self.cors_origins.strip():
+                return DEFAULT_CORS_ORIGINS
+            origins = [origin.strip() for origin in self.cors_origins.split(',') if origin.strip()]
+            return origins if origins else DEFAULT_CORS_ORIGINS
+        return DEFAULT_CORS_ORIGINS
 
 
 # Instancia global de configuración

@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from src.config import get_db
 from src.models import User, Role
@@ -49,9 +50,9 @@ async def get_current_user(
                 detail="Token inválido: ID de usuario no encontrado"
             )
         
-        # Obtener usuario de la base de datos
+        # Obtener usuario de la base de datos con su rol
         result = await db.execute(
-            select(User).where(User.id == int(user_id))
+            select(User).options(selectinload(User.role)).where(User.id == int(user_id))
         )
         user = result.scalar_one_or_none()
         

@@ -8,6 +8,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from src.config import get_db
 from src.models import User, Role
@@ -57,9 +58,11 @@ async def list_users(
                 detail="No tienes permisos para leer usuarios"
             )
         
-        # Obtener usuarios
+        # Obtener usuarios con sus roles
         result = await db.execute(
-            select(User).order_by(User.created_at.desc())
+            select(User)
+            .options(selectinload(User.role))
+            .order_by(User.created_at.desc())
         )
         users = result.scalars().all()
         
@@ -123,9 +126,11 @@ async def get_user(
                 detail="No tienes permisos para leer usuarios"
             )
         
-        # Obtener usuario
+        # Obtener usuario con su rol
         result = await db.execute(
-            select(User).where(User.id == user_id)
+            select(User)
+            .options(selectinload(User.role))
+            .where(User.id == user_id)
         )
         user = result.scalar_one_or_none()
         
@@ -191,9 +196,11 @@ async def list_roles(
                 detail="No tienes permisos para leer roles"
             )
         
-        # Obtener roles
+        # Obtener roles con sus usuarios
         result = await db.execute(
-            select(Role).order_by(Role.name)
+            select(Role)
+            .options(selectinload(Role.users))
+            .order_by(Role.name)
         )
         roles = result.scalars().all()
         

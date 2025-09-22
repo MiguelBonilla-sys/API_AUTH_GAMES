@@ -205,6 +205,22 @@ async def verify_user_refresh_token(session: AsyncSession, token: str) -> Option
     return await token_service.verify_refresh_token(token)
 
 
+async def create_user_refresh_token(session: AsyncSession, user: User) -> str:
+    """
+    Función de conveniencia para crear un token de renovación para un usuario.
+    
+    Args:
+        session: Sesión de base de datos
+        user: Usuario para el cual crear el token
+        
+    Returns:
+        Token de renovación generado
+    """
+    token_service = TokenService(session)
+    token_plain, _ = await token_service.create_refresh_token_for_user(user)
+    return token_plain
+
+
 async def revoke_user_refresh_token(session: AsyncSession, token: str) -> bool:
     """
     Función de conveniencia para revocar un token de renovación.

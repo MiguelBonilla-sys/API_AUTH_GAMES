@@ -86,6 +86,29 @@ from .role import (
     PermissionResponse
 )
 
+# Schemas de videojuegos
+from .videojuegos import (
+    # Request schemas
+    VideojuegoCreateRequest,
+    VideojuegoUpdateRequest,
+    VideojuegoFilterRequest,
+    
+    # Response schemas
+    DesarrolladoraResponse,
+    VideojuegoResponse,
+    VideojuegoListResponse,
+    VideojuegoDetailResponse,
+    VideojuegoCreateResponse,
+    VideojuegoUpdateResponse,
+    VideojuegoDeleteResponse,
+    CategoriasResponse,
+    EstadisticasResponse,
+    
+    # Error schemas
+    VideojuegoErrorResponse,
+    VideojuegoNotFoundResponse
+)
+
 __all__ = [
     # Base schemas
     "BaseResponse",
@@ -157,5 +180,25 @@ __all__ = [
     "UserRoleRemovalResponse",
     
     # Permission schemas
-    "PermissionResponse"
+    "PermissionResponse",
+    
+    # Videojuego request schemas
+    "VideojuegoCreateRequest",
+    "VideojuegoUpdateRequest",
+    "VideojuegoFilterRequest",
+    
+    # Videojuego response schemas
+    "DesarrolladoraResponse",
+    "VideojuegoResponse",
+    "VideojuegoListResponse",
+    "VideojuegoDetailResponse",
+    "VideojuegoCreateResponse",
+    "VideojuegoUpdateResponse",
+    "VideojuegoDeleteResponse",
+    "CategoriasResponse",
+    "EstadisticasResponse",
+    
+    # Videojuego error schemas
+    "VideojuegoErrorResponse",
+    "VideojuegoNotFoundResponse"
 ]

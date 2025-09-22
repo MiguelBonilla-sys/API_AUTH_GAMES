@@ -12,15 +12,17 @@ from .database import (
     close_db
 )
 
-from .settings import (
+from .settings_complete import (
     Settings,
     settings,
     get_settings,
     is_development,
     is_production,
     get_database_url,
-    get_jwt_secret,
-    get_flask_api_url
+    get_flask_api_url,
+    get_jwt_settings,
+    get_cors_settings,
+    get_server_config
 )
 
 __all__ = [
@@ -39,6 +41,8 @@ __all__ = [
     "is_development",
     "is_production",
     "get_database_url",
-    "get_jwt_secret",
-    "get_flask_api_url"
+    "get_flask_api_url",
+    "get_jwt_settings",
+    "get_cors_settings",
+    "get_server_config"
 ]
