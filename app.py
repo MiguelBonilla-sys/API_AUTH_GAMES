@@ -185,7 +185,6 @@ async def health_check():
                 "documentation": {
                     "swagger": "/docs",
                     "redoc": "/redoc",
-                    "scalar": "/scalar",
                     "protected_docs": "/docs-protected",
                     "openapi_json": "/openapi.json"
                 }
@@ -225,18 +224,6 @@ async def protected_docs():
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css",
     )
-
-
-@app.get("/scalar", summary="Documentación Scalar", description="Documentación moderna con Scalar")
-async def scalar_docs():
-    """
-    Documentación moderna de la API usando Scalar.
-    """
-    from fastapi.responses import HTMLResponse
-    from scalar_alternative import get_scalar_html
-    
-    html_content = get_scalar_html(APP_NAME, app.openapi_url)
-    return HTMLResponse(content=html_content)
 
 
 @app.get("/ready", summary="Readiness Check", description="Verificar si la aplicación está lista para recibir tráfico")
