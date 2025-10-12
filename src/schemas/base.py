@@ -39,6 +39,8 @@ class ErrorResponse(BaseResponse):
     """
     success: bool = Field(default=False, description="Siempre false para errores")
     errors: Optional[List[Dict[str, Any]]] = Field(default=None, description="Lista de errores detallados")
+    error_code: Optional[str] = Field(default=None, description="Código de error específico")
+    error_type: Optional[str] = Field(default="general_error", description="Tipo de error")
 
 
 class ValidationError(BaseModel):
@@ -75,3 +77,43 @@ class HealthCheckResponse(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+
+
+# ===== SCHEMAS DE ERROR ESPECÍFICOS =====
+
+class AuthorizationErrorResponse(ErrorResponse):
+    """
+    Schema para errores de autorización.
+    """
+    error_type: str = Field(default="authorization_error", description="Tipo de error de autorización")
+    error_code: Optional[str] = Field(default=None, description="Código específico de autorización")
+
+
+class PermissionErrorResponse(ErrorResponse):
+    """
+    Schema para errores de permisos.
+    """
+    error_type: str = Field(default="permission_error", description="Tipo de error de permisos")
+    error_code: Optional[str] = Field(default=None, description="Código específico de permisos")
+    required_permission: Optional[str] = Field(default=None, description="Permiso requerido")
+    user_role: Optional[str] = Field(default=None, description="Rol del usuario actual")
+
+
+class ResourceOwnershipErrorResponse(ErrorResponse):
+    """
+    Schema para errores de propiedad de recursos.
+    """
+    error_type: str = Field(default="resource_ownership_error", description="Tipo de error de propiedad")
+    error_code: str = Field(default="NOT_RESOURCE_OWNER", description="Código de error de propiedad")
+    resource_type: Optional[str] = Field(default=None, description="Tipo de recurso")
+    resource_id: Optional[int] = Field(default=None, description="ID del recurso")
+
+
+class RoleValidationErrorResponse(ErrorResponse):
+    """
+    Schema para errores de validación de roles.
+    """
+    error_type: str = Field(default="role_validation_error", description="Tipo de error de validación de rol")
+    error_code: Optional[str] = Field(default=None, description="Código específico de validación")
+    requested_role: Optional[str] = Field(default=None, description="Rol solicitado")
+    allowed_roles: Optional[List[str]] = Field(default=None, description="Roles permitidos")

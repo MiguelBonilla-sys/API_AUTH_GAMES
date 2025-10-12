@@ -332,3 +332,91 @@ async def verify_resource_ownership(
         # En caso de error, denegar acceso por seguridad
         print(f"Error verificando ownership: {e}")
         return False
+
+
+def create_authorization_error_response(
+    message: str,
+    error_code: str = "INSUFFICIENT_PERMISSIONS",
+    required_permission: str = None,
+    user_role: str = None
+) -> dict:
+    """
+    Crear respuesta de error de autorización estandarizada.
+    
+    Args:
+        message: Mensaje de error
+        error_code: Código de error específico
+        required_permission: Permiso requerido
+        user_role: Rol del usuario actual
+        
+    Returns:
+        Diccionario con respuesta de error estandarizada
+    """
+    from datetime import datetime
+    return {
+        "success": False,
+        "message": message,
+        "error_type": "authorization_error",
+        "error_code": error_code,
+        "required_permission": required_permission,
+        "user_role": user_role,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+def create_resource_ownership_error_response(
+    message: str,
+    resource_type: str,
+    resource_id: int
+) -> dict:
+    """
+    Crear respuesta de error de propiedad de recurso estandarizada.
+    
+    Args:
+        message: Mensaje de error
+        resource_type: Tipo de recurso
+        resource_id: ID del recurso
+        
+    Returns:
+        Diccionario con respuesta de error estandarizada
+    """
+    from datetime import datetime
+    return {
+        "success": False,
+        "message": message,
+        "error_type": "resource_ownership_error",
+        "error_code": "NOT_RESOURCE_OWNER",
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+def create_role_validation_error_response(
+    message: str,
+    requested_role: str,
+    allowed_roles: list = None,
+    error_code: str = "INVALID_ROLE"
+) -> dict:
+    """
+    Crear respuesta de error de validación de rol estandarizada.
+    
+    Args:
+        message: Mensaje de error
+        requested_role: Rol solicitado
+        allowed_roles: Lista de roles permitidos
+        error_code: Código de error específico
+        
+    Returns:
+        Diccionario con respuesta de error estandarizada
+    """
+    from datetime import datetime
+    return {
+        "success": False,
+        "message": message,
+        "error_type": "role_validation_error",
+        "error_code": error_code,
+        "requested_role": requested_role,
+        "allowed_roles": allowed_roles or ["desarrolladora", "editor"],
+        "timestamp": datetime.now().isoformat()
+    }
