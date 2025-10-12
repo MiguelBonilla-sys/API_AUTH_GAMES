@@ -45,6 +45,13 @@ from src.schemas import (
     ApiResponse,
     PasswordStrengthResponse
 )
+from src.schemas.role import (
+    RoleResponse,
+    RolePermissionsResponse,
+    RolePermissionsApiResponse,
+    PermissionResponse
+)
+from src.auth.permissions import ROLE_PERMISSIONS, Permissions
 
 # Configurar router
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -616,6 +623,122 @@ async def check_password_strength(
             timestamp=datetime.now()
         )
         
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+
+
+@router.get(
+    "/roles",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar roles disponibles",
+    description="Obtiene la lista de roles disponibles en el sistema (acceso público)"
+)
+async def list_available_roles():
+    """
+    Listar roles disponibles en el sistema.
+    Endpoint público - no requiere autenticación.
+    """
+    try:
+        # Obtener roles disponibles
+        available_roles = [
+            RoleResponse(
+                id=1,
+                name="desarrolladora",
+                description="Desarrolladora que puede gestionar sus propios videojuegos y desarrolladora",
+                created_at=datetime.now(),
+                user_count=0
+            ),
+            RoleResponse(
+                id=2,
+                name="editor",
+                description="Editor que puede gestionar todos los videojuegos y leer desarrolladoras",
+                created_at=datetime.now(),
+                user_count=0
+            ),
+            RoleResponse(
+                id=3,
+                name="superadmin",
+                description="Superadministrador con acceso completo a todas las operaciones del sistema",
+                created_at=datetime.now(),
+                user_count=0
+            )
+        ]
+        
+        return ApiResponse(
+            success=True,
+            message="Roles disponibles obtenidos exitosamente",
+            data=available_roles,
+            count=len(available_roles),
+            timestamp=datetime.now()
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+
+
+@router.get(
+    "/roles/{role_name}/permissions",
+    response_model=RolePermissionsApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener permisos de rol",
+    description="Obtiene los permisos específicos de un rol (acceso público)"
+)
+async def get_role_permissions(role_name: str):
+    """
+    Obtener permisos de un rol específico.
+    Endpoint público - no requiere autenticación.
+    """
+    try:
+        # Validar que el rol existe
+        if role_name not in ROLE_PERMISSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Rol '{role_name}' no encontrado"
+            )
+        
+        # Obtener permisos del rol
+        role_permissions = ROLE_PERMISSIONS[role_name]
+        
+        # Convertir a PermissionResponse
+        permissions = [
+            PermissionResponse(
+                name=permission.name,
+                description=permission.description
+            )
+            for permission in role_permissions
+        ]
+        
+        # Crear respuesta del rol
+        role_response = RoleResponse(
+            id=1 if role_name == "desarrolladora" else 2 if role_name == "editor" else 3,
+            name=role_name,
+            description=f"Permisos del rol {role_name}",
+            created_at=datetime.now(),
+            user_count=0
+        )
+        
+        # Crear respuesta de permisos
+        role_permissions_response = RolePermissionsResponse(
+            role=role_response,
+            permissions=permissions
+        )
+        
+        return RolePermissionsApiResponse(
+            success=True,
+            message=f"Permisos del rol '{role_name}' obtenidos exitosamente",
+            data=role_permissions_response,
+            timestamp=datetime.now()
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
