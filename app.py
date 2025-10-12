@@ -204,12 +204,11 @@ async def health_check():
                 "service": APP_NAME,
                 "version": APP_VERSION,
                 "status": "starting",
-                    "error": str(e),
-                    "timestamp": datetime.utcnow().isoformat()
-                },
+                "error": str(e),
                 "timestamp": datetime.utcnow().isoformat()
-            }
-        )
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 
 @app.get("/docs-protected", summary="Documentación Protegida", description="Documentación de la API con autenticación")
