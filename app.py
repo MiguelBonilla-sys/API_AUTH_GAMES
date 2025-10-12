@@ -41,22 +41,22 @@ async def lifespan(app: FastAPI):
     Gestión del ciclo de vida de la aplicación.
     Inicializa y cierra la base de datos.
     """
+    # Inicializar base de datos
     try:
-        # Inicializar base de datos
         await init_db()
         print("✅ Base de datos inicializada")
-        
-        yield
-        
     except Exception as e:
-        print(f"⚠️ Error durante el ciclo de vida: {e}")
-    finally:
-        try:
-            # Cerrar base de datos
-            await close_db()
-            print("✅ Base de datos cerrada")
-        except Exception as e:
-            print(f"⚠️ Error al cerrar base de datos: {e}")
+        print(f"⚠️ Error al inicializar BD (continuando): {e}")
+    
+    # SIEMPRE hacer yield
+    yield
+    
+    # Cerrar base de datos
+    try:
+        await close_db()
+        print("✅ Base de datos cerrada")
+    except Exception as e:
+        print(f"⚠️ Error al cerrar base de datos: {e}")
 
 
 # Crear aplicación FastAPI
