@@ -7,6 +7,7 @@ starlette==0.48.0
 # Database and ORM
 SQLAlchemy==1.4.54
 asyncpg==0.30.0
+psycopg2-binary==2.9.10
 alembic==1.16.5
 
 # Authentication and Security
