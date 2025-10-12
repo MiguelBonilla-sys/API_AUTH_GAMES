@@ -28,6 +28,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.protected_paths = protected_paths or ["/api/"]
         self.excluded_paths = excluded_paths or ["/auth/", "/docs", "/redoc", "/openapi.json", "/health"]
+        
+        # Rutas públicas que no requieren autenticación
+        self.public_paths = [
+            "/api/videojuegos/",  # GET endpoints de videojuegos son públicos
+        ]
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -84,6 +89,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if path.startswith(excluded_path):
                 return False
         
+        # Verificar rutas públicas
+        for public_path in self.public_paths:
+            if path.startswith(public_path):
+                return False
+        
         # Verificar rutas protegidas
         for protected_path in self.protected_paths:
             if path.startswith(protected_path):
@@ -121,12 +131,14 @@ class RoleMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        admin_paths: Optional[list] = None,
-        user_paths: Optional[list] = None
+        superadmin_paths: Optional[list] = None,
+        editor_paths: Optional[list] = None,
+        desarrolladora_paths: Optional[list] = None
     ):
         super().__init__(app)
-        self.admin_paths = admin_paths or ["/api/admin/", "/api/users/", "/api/roles/"]
-        self.user_paths = user_paths or ["/api/videojuegos/", "/api/desarrolladoras/"]
+        self.superadmin_paths = superadmin_paths or ["/admin/", "/api/users/", "/api/roles/"]
+        self.editor_paths = editor_paths or ["/api/videojuegos/"]
+        self.desarrolladora_paths = desarrolladora_paths or ["/api/desarrolladoras/"]
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -149,11 +161,14 @@ class RoleMiddleware(BaseHTTPMiddleware):
             return self._forbidden_response("Información de usuario no disponible")
         
         # Verificar permisos según la ruta
-        if self._is_admin_path(request.url.path) and user_role != "admin":
-            return self._forbidden_response("Se requieren permisos de administrador")
+        if self._is_superadmin_path(request.url.path) and user_role != "superadmin":
+            return self._forbidden_response("Se requieren permisos de superadministrador")
         
-        if self._is_user_path(request.url.path) and user_role not in ["admin", "user"]:
-            return self._forbidden_response("Se requieren permisos de usuario")
+        if self._is_editor_path(request.url.path) and user_role not in ["superadmin", "editor"]:
+            return self._forbidden_response("Se requieren permisos de editor o superadministrador")
+        
+        if self._is_desarrolladora_path(request.url.path) and user_role not in ["superadmin", "editor", "desarrolladora"]:
+            return self._forbidden_response("Se requieren permisos de desarrolladora, editor o superadministrador")
         
         # Continuar con el request
         response = await call_next(request)
@@ -169,32 +184,45 @@ class RoleMiddleware(BaseHTTPMiddleware):
         Returns:
             True si requiere autorización por roles, False en caso contrario
         """
-        return (self._is_admin_path(path) or 
-                self._is_user_path(path))
+        return (self._is_superadmin_path(path) or 
+                self._is_editor_path(path) or
+                self._is_desarrolladora_path(path))
     
-    def _is_admin_path(self, path: str) -> bool:
+    def _is_superadmin_path(self, path: str) -> bool:
         """
-        Verificar si una ruta es solo para administradores.
+        Verificar si una ruta es solo para superadministradores.
         
         Args:
             path: Ruta a verificar
             
         Returns:
-            True si es ruta de administrador, False en caso contrario
+            True si es ruta de superadministrador, False en caso contrario
         """
-        return any(path.startswith(admin_path) for admin_path in self.admin_paths)
+        return any(path.startswith(superadmin_path) for superadmin_path in self.superadmin_paths)
     
-    def _is_user_path(self, path: str) -> bool:
+    def _is_editor_path(self, path: str) -> bool:
         """
-        Verificar si una ruta es para usuarios (admin o user).
+        Verificar si una ruta es para editores o superadministradores.
         
         Args:
             path: Ruta a verificar
             
         Returns:
-            True si es ruta de usuario, False en caso contrario
+            True si es ruta de editor, False en caso contrario
         """
-        return any(path.startswith(user_path) for user_path in self.user_paths)
+        return any(path.startswith(editor_path) for editor_path in self.editor_paths)
+    
+    def _is_desarrolladora_path(self, path: str) -> bool:
+        """
+        Verificar si una ruta es para desarrolladoras, editores o superadministradores.
+        
+        Args:
+            path: Ruta a verificar
+            
+        Returns:
+            True si es ruta de desarrolladora, False en caso contrario
+        """
+        return any(path.startswith(desarrolladora_path) for desarrolladora_path in self.desarrolladora_paths)
     
     def _forbidden_response(self, message: str) -> JSONResponse:
         """
