@@ -141,30 +141,43 @@ def check_user_permissions(user: User, required_role: str = None) -> bool:
     return True
 
 
-def is_admin_user(user: User) -> bool:
+def is_superadmin_user(user: User) -> bool:
     """
-    Verificar si un usuario es administrador.
+    Verificar si un usuario es superadministrador.
     
     Args:
         user: Usuario a verificar
         
     Returns:
-        True si es administrador, False en caso contrario
+        True si es superadministrador, False en caso contrario
     """
-    return check_user_permissions(user, "admin")
+    return check_user_permissions(user, "superadmin")
 
 
-def is_regular_user(user: User) -> bool:
+def is_editor_user(user: User) -> bool:
     """
-    Verificar si un usuario es usuario regular.
+    Verificar si un usuario es editor.
     
     Args:
         user: Usuario a verificar
         
     Returns:
-        True si es usuario regular, False en caso contrario
+        True si es editor, False en caso contrario
     """
-    return check_user_permissions(user, "user")
+    return check_user_permissions(user, "editor")
+
+
+def is_desarrolladora_user(user: User) -> bool:
+    """
+    Verificar si un usuario es desarrolladora.
+    
+    Args:
+        user: Usuario a verificar
+        
+    Returns:
+        True si es desarrolladora, False en caso contrario
+    """
+    return check_user_permissions(user, "desarrolladora")
 
 
 def extract_token_from_header(authorization: str) -> Optional[str]:
@@ -258,3 +271,64 @@ def sanitize_user_data(user: User) -> dict:
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None
     }
+
+
+async def verify_resource_ownership(
+    resource_type: str, 
+    resource_id: int, 
+    user: User,
+    proxy_service=None
+) -> bool:
+    """
+    Verificar si un usuario es propietario de un recurso específico.
+    
+    Args:
+        resource_type: Tipo de recurso ('videojuego' o 'desarrolladora')
+        resource_id: ID del recurso
+        user: Usuario a verificar
+        proxy_service: Servicio proxy para consultar API Flask
+        
+    Returns:
+        True si el usuario es propietario, False en caso contrario
+    """
+    try:
+        if not proxy_service:
+            # Si no hay proxy service, permitir acceso (fallback)
+            return True
+        
+        # Consultar API Flask para obtener información del recurso
+        if resource_type == "videojuego":
+            endpoint = f"api/videojuegos/{resource_id}"
+        elif resource_type == "desarrolladora":
+            endpoint = f"api/desarrolladoras/{resource_id}"
+        else:
+            return False
+        
+        # Hacer request a la API Flask
+        response = await proxy_service.get(
+            endpoint=endpoint,
+            user_email=user.email
+        )
+        
+        if not response or not response.get("success"):
+            return False
+        
+        resource_data = response.get("data", {})
+        
+        # Verificar ownership por email o ID
+        owner_email = resource_data.get("owner_email") or resource_data.get("created_by_email")
+        owner_id = resource_data.get("owner_id") or resource_data.get("created_by_id")
+        
+        # Comparar con el usuario actual
+        if owner_email and owner_email == user.email:
+            return True
+        
+        if owner_id and str(owner_id) == str(user.id):
+            return True
+        
+        return False
+        
+    except Exception as e:
+        # En caso de error, denegar acceso por seguridad
+        print(f"Error verificando ownership: {e}")
+        return False

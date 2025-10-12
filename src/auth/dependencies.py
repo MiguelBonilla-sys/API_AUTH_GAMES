@@ -17,6 +17,7 @@ from src.auth import (
     get_user_by_id,
     JWTError
 )
+from src.auth.utils import verify_resource_ownership
 
 # Esquema de seguridad para Bearer tokens
 security = HTTPBearer()
@@ -199,3 +200,51 @@ CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 CurrentSuperadminUser = Annotated[User, Depends(get_current_superadmin_user)]
 CurrentRegularUser = Annotated[User, Depends(get_current_regular_user)]
 OptionalCurrentUser = Annotated[Optional[User], Depends(get_optional_current_user)]
+
+
+async def verify_videojuego_ownership(
+    videojuego_id: int,
+    current_user: CurrentUser,
+    proxy_service = None
+) -> bool:
+    """
+    Verificar que el usuario es propietario del videojuego.
+    
+    Args:
+        videojuego_id: ID del videojuego
+        current_user: Usuario actual
+        proxy_service: Servicio proxy para consultar API Flask
+        
+    Returns:
+        True si es propietario, False en caso contrario
+    """
+    return await verify_resource_ownership(
+        resource_type="videojuego",
+        resource_id=videojuego_id,
+        user=current_user,
+        proxy_service=proxy_service
+    )
+
+
+async def verify_desarrolladora_ownership(
+    desarrolladora_id: int,
+    current_user: CurrentUser,
+    proxy_service = None
+) -> bool:
+    """
+    Verificar que el usuario es propietario de la desarrolladora.
+    
+    Args:
+        desarrolladora_id: ID de la desarrolladora
+        current_user: Usuario actual
+        proxy_service: Servicio proxy para consultar API Flask
+        
+    Returns:
+        True si es propietario, False en caso contrario
+    """
+    return await verify_resource_ownership(
+        resource_type="desarrolladora",
+        resource_id=desarrolladora_id,
+        user=current_user,
+        proxy_service=proxy_service
+    )

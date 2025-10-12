@@ -17,6 +17,7 @@ from src.auth import (
     has_permission,
     Permissions
 )
+from src.auth.utils import verify_resource_ownership
 from src.services import get_proxy_service, ProxyService
 from src.schemas.videojuegos import (
     VideojuegoCreateRequest,
@@ -476,9 +477,17 @@ async def update_videojuego(
         
         # Si es desarrolladora, verificar que sea propietaria del videojuego
         if current_user.role and current_user.role.name == "desarrolladora":
-            # TODO: Implementar verificación de propiedad desde API Flask
-            # Por ahora permitir a todas las desarrolladoras
-            pass
+            is_owner = await verify_resource_ownership(
+                resource_type="videojuego",
+                resource_id=videojuego_id,
+                user=current_user,
+                proxy_service=proxy_service
+            )
+            if not is_owner:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Solo puedes actualizar tus propios videojuegos"
+                )
         
         # Reenviar request a la API Flask
         return await proxy_service.put(
@@ -550,9 +559,17 @@ async def delete_videojuego(
         
         # Si es desarrolladora, verificar que sea propietaria del videojuego
         if current_user.role and current_user.role.name == "desarrolladora":
-            # TODO: Implementar verificación de propiedad desde API Flask
-            # Por ahora permitir a todas las desarrolladoras
-            pass
+            is_owner = await verify_resource_ownership(
+                resource_type="videojuego",
+                resource_id=videojuego_id,
+                user=current_user,
+                proxy_service=proxy_service
+            )
+            if not is_owner:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Solo puedes eliminar tus propios videojuegos"
+                )
         
         # Reenviar request a la API Flask
         return await proxy_service.delete(
