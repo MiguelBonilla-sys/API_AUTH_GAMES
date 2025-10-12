@@ -139,8 +139,6 @@ class PermissionResponse(BaseModel):
     """
     name: str = Field(description="Nombre del permiso")
     description: str = Field(description="Descripción del permiso")
-    resource: str = Field(description="Recurso al que aplica el permiso")
-    action: str = Field(description="Acción permitida")
 
 
 class RolePermissionsResponse(BaseModel):

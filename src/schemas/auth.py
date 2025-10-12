@@ -45,7 +45,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr = Field(description=EMAIL_DESCRIPTION)
     password: str = Field(min_length=8, max_length=128, description=PASSWORD_DESCRIPTION)
     confirm_password: str = Field(description="Confirmación de contraseña")
-    role: Optional[str] = Field(default="user", description=f"{ROLE_DESCRIPTION} (admin/user)")
+    role: Optional[str] = Field(default="desarrolladora", description=f"{ROLE_DESCRIPTION} (desarrolladora/editor/superadmin)")
     
     @validator('email')
     def validate_email(cls, v):
@@ -86,8 +86,8 @@ class RegisterRequest(BaseModel):
     @validator('role')
     def validate_role(cls, v):
         """Validar rol del usuario."""
-        if v not in ['admin', 'user']:
-            raise ValueError('El rol debe ser "admin" o "user"')
+        if v not in ['desarrolladora', 'editor', 'superadmin']:
+            raise ValueError('El rol debe ser "desarrolladora", "editor" o "superadmin"')
         return v
 
 
