@@ -9,9 +9,9 @@ from fastapi.responses import JSONResponse
 
 from src.auth import (
     CurrentUser,
-    CurrentAdminUser,
+    CurrentSuperadminUser,
     get_current_user,
-    get_current_admin_user,
+    get_current_superadmin_user,
     has_permission,
     Permissions
 )
@@ -203,12 +203,12 @@ async def get_estadisticas(
 )
 async def create_desarrolladora(
     desarrolladora_data: Dict[str, Any],
-    current_user: Annotated[CurrentAdminUser, Depends(get_current_admin_user)],
+    current_user: CurrentUser = Depends(get_current_user),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
     Crear nueva desarrolladora.
-    Solo accesible para administradores.
+    Accesible para desarrolladoras, editores y superadministradores.
     """
     try:
         # Verificar permiso de creación
@@ -240,14 +240,14 @@ async def create_desarrolladora(
     description="Actualiza una desarrolladora existente (solo administradores)"
 )
 async def update_desarrolladora(
-    current_user: Annotated[CurrentAdminUser, Depends(get_current_admin_user)],
+    current_user: CurrentUser = Depends(get_current_user),
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     desarrolladora_data: Dict[str, Any] = None,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
     Actualizar desarrolladora existente.
-    Solo accesible para administradores.
+    Accesible para desarrolladoras (solo propia), editores y superadministradores.
     """
     try:
         # Verificar permiso de actualización
@@ -279,13 +279,13 @@ async def update_desarrolladora(
     description="Elimina una desarrolladora (solo administradores)"
 )
 async def delete_desarrolladora(
-    current_user: Annotated[CurrentAdminUser, Depends(get_current_admin_user)],
+    current_user: CurrentUser = Depends(get_current_user),
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
     Eliminar desarrolladora.
-    Solo accesible para administradores.
+    Accesible para desarrolladoras (solo propia), editores y superadministradores.
     """
     try:
         # Verificar permiso de eliminación

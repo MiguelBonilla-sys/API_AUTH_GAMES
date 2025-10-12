@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from src.config import get_db
 from src.models import User, Role
 from src.auth import (
-    CurrentAdminUser,
+    CurrentSuperadminUser,
     has_permission,
     Permissions,
     get_user_permissions
@@ -37,7 +37,7 @@ router = APIRouter(prefix="/admin", tags=["administration"])
     description="Obtiene la lista de todos los usuarios (solo administradores)"
 )
 async def list_users(
-    current_user: CurrentAdminUser,
+    current_user: CurrentSuperadminUser,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -104,7 +104,7 @@ async def list_users(
 )
 async def get_user(
     user_id: int,
-    current_user: CurrentAdminUser,
+    current_user: CurrentSuperadminUser,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -175,7 +175,7 @@ async def get_user(
     description="Obtiene la lista de todos los roles (solo administradores)"
 )
 async def list_roles(
-    current_user: CurrentAdminUser,
+    current_user: CurrentSuperadminUser,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -241,7 +241,7 @@ async def list_roles(
     description="Obtiene estadísticas generales del sistema (solo administradores)"
 )
 async def get_system_stats(
-    current_user: CurrentAdminUser,
+    current_user: CurrentSuperadminUser,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -308,7 +308,7 @@ async def get_system_stats(
     description="Obtiene los permisos del usuario autenticado"
 )
 async def get_my_permissions(
-    current_user: CurrentAdminUser
+    current_user: CurrentSuperadminUser
 ):
     """
     Obtener permisos del usuario autenticado.

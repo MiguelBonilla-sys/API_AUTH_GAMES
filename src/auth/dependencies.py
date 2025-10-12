@@ -103,25 +103,25 @@ def get_current_active_user(
     return current_user
 
 
-def get_current_admin_user(
+def get_current_superadmin_user(
     current_user: Annotated[User, Depends(get_current_user)]
 ) -> User:
     """
-    Obtener usuario actual y verificar que sea administrador.
+    Obtener usuario actual y verificar que sea superadministrador.
     
     Args:
         current_user: Usuario actual
         
     Returns:
-        Usuario administrador
+        Usuario superadministrador
         
     Raises:
-        HTTPException: Si el usuario no es administrador
+        HTTPException: Si el usuario no es superadministrador
     """
-    if not current_user.role or current_user.role.name != "admin":
+    if not current_user.role or current_user.role.name != "superadmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: Se requieren permisos de administrador"
+            detail="Acceso denegado: Se requieren permisos de superadministrador"
         )
     
     return current_user
@@ -196,6 +196,6 @@ async def get_optional_current_user(
 # Type aliases para facilitar el uso
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
-CurrentAdminUser = Annotated[User, Depends(get_current_admin_user)]
+CurrentSuperadminUser = Annotated[User, Depends(get_current_superadmin_user)]
 CurrentRegularUser = Annotated[User, Depends(get_current_regular_user)]
 OptionalCurrentUser = Annotated[Optional[User], Depends(get_optional_current_user)]
