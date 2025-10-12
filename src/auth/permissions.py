@@ -70,7 +70,42 @@ UNAUTHENTICATED_MESSAGE = "Usuario no autenticado"
 
 # Mapeo de roles a permisos
 ROLE_PERMISSIONS = {
-    "admin": [
+    "desarrolladora": [
+        # Permisos de autenticación
+        Permissions.AUTH_LOGIN,
+        Permissions.AUTH_LOGOUT,
+        Permissions.AUTH_REFRESH,
+        Permissions.AUTH_CHANGE_PASSWORD,
+        
+        # Permisos de videojuegos (lectura de todos, CRUD de propios)
+        Permissions.VIDEOJUEGO_READ,
+        Permissions.VIDEOJUEGO_CREATE,
+        Permissions.VIDEOJUEGO_UPDATE,
+        Permissions.VIDEOJUEGO_DELETE,
+        
+        # Permisos de desarrolladoras (lectura de todas, CRUD de propia)
+        Permissions.DESARROLLADORA_READ,
+        Permissions.DESARROLLADORA_CREATE,
+        Permissions.DESARROLLADORA_UPDATE,
+        Permissions.DESARROLLADORA_DELETE,
+    ],
+    "editor": [
+        # Permisos de autenticación
+        Permissions.AUTH_LOGIN,
+        Permissions.AUTH_LOGOUT,
+        Permissions.AUTH_REFRESH,
+        Permissions.AUTH_CHANGE_PASSWORD,
+        
+        # Permisos de videojuegos (CRUD completo)
+        Permissions.VIDEOJUEGO_READ,
+        Permissions.VIDEOJUEGO_CREATE,
+        Permissions.VIDEOJUEGO_UPDATE,
+        Permissions.VIDEOJUEGO_DELETE,
+        
+        # Permisos de desarrolladoras (solo lectura)
+        Permissions.DESARROLLADORA_READ,
+    ],
+    "superadmin": [
         # Permisos de autenticación
         Permissions.AUTH_LOGIN,
         Permissions.AUTH_LOGOUT,
@@ -100,19 +135,6 @@ ROLE_PERMISSIONS = {
         Permissions.DESARROLLADORA_CREATE,
         Permissions.DESARROLLADORA_UPDATE,
         Permissions.DESARROLLADORA_DELETE,
-    ],
-    "user": [
-        # Permisos de autenticación
-        Permissions.AUTH_LOGIN,
-        Permissions.AUTH_LOGOUT,
-        Permissions.AUTH_REFRESH,
-        Permissions.AUTH_CHANGE_PASSWORD,
-        
-        # Permisos de videojuegos (solo lectura)
-        Permissions.VIDEOJUEGO_READ,
-        
-        # Permisos de desarrolladoras (solo lectura)
-        Permissions.DESARROLLADORA_READ,
     ]
 }
 
@@ -341,9 +363,9 @@ def require_role(role_name: str):
     return decorator
 
 
-def require_admin(func: Callable):
+def require_desarrolladora(func: Callable):
     """
-    Decorador para requerir rol de administrador.
+    Decorador para requerir rol de desarrolladora.
     
     Args:
         func: Función a decorar
@@ -351,12 +373,12 @@ def require_admin(func: Callable):
     Returns:
         Función decorada
     """
-    return require_role("admin")(func)
+    return require_role("desarrolladora")(func)
 
 
-def require_user(func: Callable):
+def require_editor(func: Callable):
     """
-    Decorador para requerir rol de usuario regular.
+    Decorador para requerir rol de editor.
     
     Args:
         func: Función a decorar
@@ -364,7 +386,20 @@ def require_user(func: Callable):
     Returns:
         Función decorada
     """
-    return require_role("user")(func)
+    return require_role("editor")(func)
+
+
+def require_superadmin(func: Callable):
+    """
+    Decorador para requerir rol de superadministrador.
+    
+    Args:
+        func: Función a decorar
+        
+    Returns:
+        Función decorada
+    """
+    return require_role("superadmin")(func)
 
 
 def get_user_permissions(user: User) -> List[Permission]:
