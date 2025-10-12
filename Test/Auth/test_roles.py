@@ -5,8 +5,14 @@ Verifica la creación, asignación y validación de roles.
 
 import pytest
 import asyncio
+import sys
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+# Agregar el directorio raíz del proyecto al path para importar módulos
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
 
 from src.models import User, Role
 from src.config import get_db

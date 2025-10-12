@@ -5,8 +5,14 @@ Verifica que los endpoints GET /videojuegos/* son accesibles sin autenticación.
 
 import pytest
 import asyncio
+import sys
+import os
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch
+
+# Agregar el directorio raíz del proyecto al path para importar módulos
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(project_root)
 
 from app import app
 from src.models import User, Role

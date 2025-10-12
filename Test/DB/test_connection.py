@@ -3,6 +3,12 @@ Script simple para probar la conexión a la base de datos.
 """
 
 import os
+import sys
+
+# Agregar el directorio raíz del proyecto al path para importar módulos
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
 from src.config.settings import get_settings
 
 def main():

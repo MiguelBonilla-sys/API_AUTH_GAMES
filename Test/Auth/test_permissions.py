@@ -4,7 +4,13 @@ Verifica la asignación y validación de permisos por rol.
 """
 
 import pytest
+import sys
+import os
 from unittest.mock import Mock, AsyncMock
+
+# Agregar el directorio raíz del proyecto al path para importar módulos
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
 
 from src.auth.permissions import (
     Permissions,
