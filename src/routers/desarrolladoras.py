@@ -33,7 +33,7 @@ DESARROLLADORA_ID_DESCRIPTION = "ID de la desarrolladora"
     description="Obtiene la lista de desarrolladoras con filtros opcionales"
 )
 async def list_desarrolladoras(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     page: Optional[int] = Query(default=1, ge=1, description="Número de página"),
     per_page: Optional[int] = Query(default=10, ge=1, le=100, description="Elementos por página"),
     pais: Optional[str] = Query(default=None, description="Filtrar por país"),
@@ -91,7 +91,7 @@ async def list_desarrolladoras(
     description="Obtiene los detalles de una desarrolladora específica"
 )
 async def get_desarrolladora(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
@@ -128,7 +128,7 @@ async def get_desarrolladora(
     description="Obtiene la lista de países de desarrolladoras"
 )
 async def list_paises(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -164,7 +164,7 @@ async def list_paises(
     description="Obtiene estadísticas de desarrolladoras"
 )
 async def get_estadisticas(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -203,7 +203,7 @@ async def get_estadisticas(
 )
 async def create_desarrolladora(
     desarrolladora_data: Dict[str, Any],
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -240,7 +240,7 @@ async def create_desarrolladora(
     description="Actualiza una desarrolladora existente (solo administradores)"
 )
 async def update_desarrolladora(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     desarrolladora_data: Dict[str, Any] = None,
     proxy_service: ProxyService = Depends(get_proxy_service)
@@ -279,7 +279,7 @@ async def update_desarrolladora(
     description="Elimina una desarrolladora (solo administradores)"
 )
 async def delete_desarrolladora(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
@@ -318,7 +318,7 @@ async def delete_desarrolladora(
     description="Búsqueda avanzada de desarrolladoras con múltiples criterios"
 )
 async def buscar_desarrolladoras(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     nombre: Optional[str] = Query(default=None, description="Nombre de la desarrolladora"),
     pais: Optional[str] = Query(default=None, description="País"),
     fundacion_desde: Optional[int] = Query(default=None, ge=1800, description="Año de fundación desde"),
@@ -379,7 +379,7 @@ async def buscar_desarrolladoras(
     description="Obtiene los videojuegos de una desarrolladora específica"
 )
 async def get_videojuegos_desarrolladora(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    current_user: CurrentUser,
     desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
     page: Optional[int] = Query(default=1, ge=1, description="Número de página"),
     per_page: Optional[int] = Query(default=10, ge=1, le=100, description="Elementos por página"),
