@@ -376,7 +376,7 @@ async def get_estadisticas(
 )
 async def create_videojuego(
     videojuego_data: VideojuegoCreateRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -458,7 +458,7 @@ async def create_videojuego(
     }
 )
 async def update_videojuego(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     videojuego_id: int = Path(description=VIDEOJUEGO_ID_DESCRIPTION, example=1),
     videojuego_data: VideojuegoUpdateRequest = None,
     proxy_service: ProxyService = Depends(get_proxy_service)
@@ -541,7 +541,7 @@ async def update_videojuego(
     }
 )
 async def delete_videojuego(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser,
     videojuego_id: int = Path(description=VIDEOJUEGO_ID_DESCRIPTION, example=1),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
