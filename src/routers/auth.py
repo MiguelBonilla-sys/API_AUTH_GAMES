@@ -112,6 +112,24 @@ async def register(
                 detail="El email ya está registrado"
             )
         
+        # Verificar si es el primer usuario (debe ser superadmin)
+        from sqlalchemy import func
+        user_count_result = await db.execute(select(func.count(User.id)))
+        user_count = user_count_result.scalar()
+        
+        # Si es el primer usuario, forzar rol superadmin
+        if user_count == 0:
+            request.role = "superadmin"
+        
+        # Validar restricciones de roles
+        if request.role == "superadmin" and user_count > 0:
+            # Solo permitir crear superadmin si ya hay usuarios (requiere autenticación)
+            # Por ahora, denegar creación de superadmin en registro público
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No puedes crear usuarios superadmin en el registro público. Contacta a un administrador."
+            )
+        
         # Obtener rol
         role = await get_role_by_name(db, request.role)
         if not role:
@@ -143,9 +161,15 @@ async def register(
             updated_at=new_user.updated_at
         )
         
+        # Mensaje personalizado según el rol
+        if user_count == 0:
+            message = "Primer usuario registrado como superadministrador exitosamente"
+        else:
+            message = f"Usuario registrado como {request.role} exitosamente"
+        
         return RegisterResponse(
             success=True,
-            message="Usuario registrado exitosamente",
+            message=message,
             data=user_data,
             timestamp=datetime.now()
         )
