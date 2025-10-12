@@ -9,10 +9,10 @@ from fastapi.responses import JSONResponse
 
 from src.auth import (
     CurrentUser,
-    CurrentAdminUser,
+    CurrentSuperadminUser,
     OptionalCurrentUser,
     get_current_user,
-    get_current_admin_user,
+    get_current_superadmin_user,
     get_optional_current_user,
     has_permission,
     Permissions
