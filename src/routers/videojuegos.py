@@ -87,7 +87,7 @@ VIDEOJUEGO_ID_DESCRIPTION = "ID del videojuego"
     }
 )
 async def list_videojuegos(
-    current_user: OptionalCurrentUser = Depends(get_optional_current_user),
+    current_user: OptionalCurrentUser,
     page: Optional[int] = Query(default=1, ge=1, description="Número de página", example=1),
     per_page: Optional[int] = Query(default=10, ge=1, le=100, description="Elementos por página", example=10),
     categoria: Optional[str] = Query(default=None, description="Filtrar por categoría", example="RPG"),
@@ -171,7 +171,7 @@ async def list_videojuegos(
     }
 )
 async def get_videojuego(
-    current_user: OptionalCurrentUser = Depends(get_optional_current_user),
+    current_user: OptionalCurrentUser,
     videojuego_id: int = Path(description=VIDEOJUEGO_ID_DESCRIPTION, example=1),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
@@ -235,7 +235,7 @@ async def get_videojuego(
     }
 )
 async def list_categorias(
-    current_user: OptionalCurrentUser = Depends(get_optional_current_user),
+    current_user: OptionalCurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -302,7 +302,7 @@ async def list_categorias(
     }
 )
 async def get_estadisticas(
-    current_user: OptionalCurrentUser = Depends(get_optional_current_user),
+    current_user: OptionalCurrentUser,
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
@@ -638,7 +638,7 @@ async def delete_videojuego(
     }
 )
 async def buscar_videojuegos(
-    current_user: OptionalCurrentUser = Depends(get_optional_current_user),
+    current_user: OptionalCurrentUser,
     nombre: Optional[str] = Query(default=None, description="Nombre del videojuego", example="zelda"),
     categoria: Optional[str] = Query(default=None, description="Categoría", example="RPG"),
     desarrolladora: Optional[str] = Query(default=None, description="Desarrolladora", example="Nintendo"),
