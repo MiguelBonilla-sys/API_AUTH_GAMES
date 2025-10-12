@@ -17,71 +17,95 @@ from src.config.init_roles import init_default_roles
 
 
 async def create_test_users():
-    """Crear usuarios de prueba."""
+    """Crear usuarios de prueba con los nuevos roles."""
     async with AsyncSessionLocal() as session:
         try:
             # Obtener roles
             from sqlalchemy import select
-            admin_role_result = await session.execute(
-                select(Role).where(Role.name == "admin")
+            superadmin_role_result = await session.execute(
+                select(Role).where(Role.name == "superadmin")
             )
-            admin_role = admin_role_result.scalar_one_or_none()
+            superadmin_role = superadmin_role_result.scalar_one_or_none()
             
-            user_role_result = await session.execute(
-                select(Role).where(Role.name == "user")
+            editor_role_result = await session.execute(
+                select(Role).where(Role.name == "editor")
             )
-            user_role = user_role_result.scalar_one_or_none()
+            editor_role = editor_role_result.scalar_one_or_none()
             
-            if not admin_role or not user_role:
+            desarrolladora_role_result = await session.execute(
+                select(Role).where(Role.name == "desarrolladora")
+            )
+            desarrolladora_role = desarrolladora_role_result.scalar_one_or_none()
+            
+            if not superadmin_role or not editor_role or not desarrolladora_role:
                 print("❌ Roles no encontrados. Ejecutando init_default_roles...")
                 await init_default_roles()
                 
                 # Obtener roles nuevamente
-                admin_role_result = await session.execute(
-                    select(Role).where(Role.name == "admin")
+                superadmin_role_result = await session.execute(
+                    select(Role).where(Role.name == "superadmin")
                 )
-                admin_role = admin_role_result.scalar_one_or_none()
+                superadmin_role = superadmin_role_result.scalar_one_or_none()
                 
-                user_role_result = await session.execute(
-                    select(Role).where(Role.name == "user")
+                editor_role_result = await session.execute(
+                    select(Role).where(Role.name == "editor")
                 )
-                user_role = user_role_result.scalar_one_or_none()
+                editor_role = editor_role_result.scalar_one_or_none()
+                
+                desarrolladora_role_result = await session.execute(
+                    select(Role).where(Role.name == "desarrolladora")
+                )
+                desarrolladora_role = desarrolladora_role_result.scalar_one_or_none()
             
-            # Crear usuario administrador
-            admin_user = User(
-                email="admin@example.com",
-                password_hash=hash_password("AdminPassword123!"),
-                role_id=admin_role.id,
+            # Crear usuario superadmin
+            superadmin_user = User(
+                email="superadmin@example.com",
+                password_hash=hash_password("SuperAdmin123!"),
+                role_id=superadmin_role.id,
                 is_active=True
             )
             
-            # Crear usuario regular
-            regular_user = User(
-                email="user@example.com",
-                password_hash=hash_password("UserPassword123!"),
-                role_id=user_role.id,
+            # Crear usuario editor
+            editor_user = User(
+                email="editor@example.com",
+                password_hash=hash_password("EditorPassword123!"),
+                role_id=editor_role.id,
                 is_active=True
             )
             
-            # Verificar si los usuarios ya existen
-            from sqlalchemy import select
-            existing_admin = await session.execute(
-                select(User).where(User.email == "admin@example.com")
+            # Crear desarrolladora 1
+            desarrolladora1_user = User(
+                email="desarrolladora1@example.com",
+                password_hash=hash_password("DevPassword123!"),
+                role_id=desarrolladora_role.id,
+                is_active=True
             )
-            if existing_admin.scalar_one_or_none():
-                print("ℹ️  Usuario admin ya existe")
-            else:
-                session.add(admin_user)
-                print("✅ Usuario admin creado: admin@example.com / AdminPassword123!")
             
-            existing_user = await session.execute(
-                select(User).where(User.email == "user@example.com")
+            # Crear desarrolladora 2
+            desarrolladora2_user = User(
+                email="desarrolladora2@example.com",
+                password_hash=hash_password("DevPassword123!"),
+                role_id=desarrolladora_role.id,
+                is_active=True
             )
-            if existing_user.scalar_one_or_none():
-                print("ℹ️  Usuario regular ya existe")
-            else:
-                session.add(regular_user)
-                print("✅ Usuario regular creado: user@example.com / UserPassword123!")
+            
+            # Verificar si los usuarios ya existen y crearlos
+            users_to_create = [
+                (superadmin_user, "superadmin@example.com", "SuperAdmin123!"),
+                (editor_user, "editor@example.com", "EditorPassword123!"),
+                (desarrolladora1_user, "desarrolladora1@example.com", "DevPassword123!"),
+                (desarrolladora2_user, "desarrolladora2@example.com", "DevPassword123!")
+            ]
+            
+            for user, email, password in users_to_create:
+                existing_user = await session.execute(
+                    select(User).where(User.email == email)
+                )
+                if existing_user.scalar_one_or_none():
+                    print(f"ℹ️  Usuario {email} ya existe")
+                else:
+                    session.add(user)
+                    print(f"✅ Usuario creado: {email} / {password}")
             
             await session.commit()
             print("✅ Base de datos inicializada correctamente")
@@ -108,8 +132,14 @@ async def main():
         
         print("\n🎉 Inicialización completada!")
         print("\nUsuarios de prueba creados:")
-        print("👑 Admin: admin@example.com / AdminPassword123!")
-        print("👤 User:  user@example.com / UserPassword123!")
+        print("👑 Superadmin: superadmin@example.com / SuperAdmin123!")
+        print("✏️  Editor:     editor@example.com / EditorPassword123!")
+        print("🎮 Desarrolladora 1: desarrolladora1@example.com / DevPassword123!")
+        print("🎮 Desarrolladora 2: desarrolladora2@example.com / DevPassword123!")
+        print("\n📋 Roles disponibles:")
+        print("   • superadmin: Acceso completo a todas las operaciones")
+        print("   • editor: Gestiona todos los videojuegos y lee desarrolladoras")
+        print("   • desarrolladora: Gestiona sus propios videojuegos y desarrolladora")
         
     except Exception as e:
         print(f"❌ Error durante la inicialización: {e}")

@@ -273,6 +273,17 @@ def main():
     print("2. Ajustar la configuración según sus necesidades")
     print("3. Ejecutar: python app.py")
     print("4. Probar la API en: http://localhost:8000/docs")
+    print()
+    print("📋 Sistema de Roles Personalizado v2.0.0:")
+    print("   • superadmin: Acceso completo a todas las operaciones")
+    print("   • editor: Gestiona todos los videojuegos y lee desarrolladoras")
+    print("   • desarrolladora: Gestiona sus propios videojuegos y desarrolladora")
+    print("   • GET /videojuegos/*: Acceso público (sin autenticación)")
+    print()
+    print("🔧 Scripts útiles:")
+    print("   • python Test/Inits/init_database.py - Crear usuarios de prueba")
+    print("   • python Test/Inits/clean_database.py - Limpiar base de datos")
+    print("   • python Test/Inits/setup_environment.py production - Configurar para producción")
 
 
 if __name__ == "__main__":
