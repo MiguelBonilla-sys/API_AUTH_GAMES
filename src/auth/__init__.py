@@ -35,25 +35,32 @@ from .utils import (
     get_user_by_id,
     get_role_by_name,
     check_user_permissions,
-    is_admin_user,
-    is_regular_user,
+    is_superadmin_user,
+    is_editor_user,
+    is_desarrolladora_user,
     extract_token_from_header,
     validate_token_format,
     get_user_info_from_token,
-    sanitize_user_data
+    sanitize_user_data,
+    verify_resource_ownership,
+    create_authorization_error_response,
+    create_resource_ownership_error_response,
+    create_role_validation_error_response
 )
 
 from .dependencies import (
     get_current_user,
     get_current_active_user,
-    get_current_admin_user,
+    get_current_superadmin_user,
     get_current_regular_user,
     get_optional_current_user,
     CurrentUser,
     CurrentActiveUser,
-    CurrentAdminUser,
+    CurrentSuperadminUser,
     CurrentRegularUser,
-    OptionalCurrentUser
+    OptionalCurrentUser,
+    verify_videojuego_ownership,
+    verify_desarrolladora_ownership
 )
 
 from .permissions import (
@@ -66,10 +73,12 @@ from .permissions import (
     require_any_permission,
     require_all_permissions,
     require_role,
-    require_admin,
-    require_user,
+    require_desarrolladora,
+    require_editor,
+    require_superadmin,
     get_user_permissions,
-    get_user_permission_names
+    get_user_permission_names,
+    ROLE_PERMISSIONS
 )
 
 from .middleware import (
@@ -108,24 +117,31 @@ __all__ = [
     "get_user_by_id",
     "get_role_by_name",
     "check_user_permissions",
-    "is_admin_user",
-    "is_regular_user",
+    "is_superadmin_user",
+    "is_editor_user",
+    "is_desarrolladora_user",
     "extract_token_from_header",
     "validate_token_format",
     "get_user_info_from_token",
     "sanitize_user_data",
+    "verify_resource_ownership",
+    "create_authorization_error_response",
+    "create_resource_ownership_error_response",
+    "create_role_validation_error_response",
     
     # Dependencies
     "get_current_user",
     "get_current_active_user",
-    "get_current_admin_user",
+    "get_current_superadmin_user",
     "get_current_regular_user",
     "get_optional_current_user",
     "CurrentUser",
     "CurrentActiveUser",
-    "CurrentAdminUser",
+    "CurrentSuperadminUser",
     "CurrentRegularUser",
     "OptionalCurrentUser",
+    "verify_videojuego_ownership",
+    "verify_desarrolladora_ownership",
     
     # Permissions
     "Permission",
@@ -137,10 +153,12 @@ __all__ = [
     "require_any_permission",
     "require_all_permissions",
     "require_role",
-    "require_admin",
-    "require_user",
+    "require_desarrolladora",
+    "require_editor",
+    "require_superadmin",
     "get_user_permissions",
     "get_user_permission_names",
+    "ROLE_PERMISSIONS",
     
     # Middleware
     "AuthMiddleware",
