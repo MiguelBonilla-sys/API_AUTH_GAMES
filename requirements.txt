@@ -12,7 +12,7 @@ alembic==1.16.5
 
 # Authentication and Security
 python-jose==3.5.0
-bcrypt==4.3.0
+bcrypt==4.2.1
 passlib==1.7.4
 PyJWT==2.10.1
 cryptography==46.0.1
