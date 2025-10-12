@@ -7,8 +7,9 @@ import asyncio
 import sys
 import os
 
-# Agregar el directorio raíz al path para importar módulos
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Agregar el directorio raíz del proyecto al path para importar módulos
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
 
 from src.config import AsyncSessionLocal, init_db
 from src.models import User, Role, Token
