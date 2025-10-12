@@ -12,7 +12,7 @@ from src.config import AsyncSessionLocal
 async def init_default_roles() -> None:
     """
     Inicializar roles por defecto en la base de datos.
-    Crea los roles 'admin' y 'user' si no existen.
+    Crea los roles 'desarrolladora', 'editor' y 'superadmin' si no existen.
     """
     async with AsyncSessionLocal() as session:
         # Verificar si ya existen roles
@@ -24,23 +24,30 @@ async def init_default_roles() -> None:
             return
         
         # Crear roles por defecto
-        admin_role = Role(
-            name="admin",
-            description="Administrador con acceso completo a todas las operaciones CRUD"
+        desarrolladora_role = Role(
+            name="desarrolladora",
+            description="Desarrolladora que puede gestionar sus propios videojuegos y desarrolladora"
         )
         
-        user_role = Role(
-            name="user", 
-            description="Usuario con acceso de solo lectura (GET operations únicamente)"
+        editor_role = Role(
+            name="editor", 
+            description="Editor que puede gestionar todos los videojuegos y leer desarrolladoras"
         )
         
-        session.add(admin_role)
-        session.add(user_role)
+        superadmin_role = Role(
+            name="superadmin",
+            description="Superadministrador con acceso completo a todas las operaciones del sistema"
+        )
+        
+        session.add(desarrolladora_role)
+        session.add(editor_role)
+        session.add(superadmin_role)
         
         await session.commit()
         print("Roles por defecto creados exitosamente:")
-        print(f"- {admin_role.name}: {admin_role.description}")
-        print(f"- {user_role.name}: {user_role.description}")
+        print(f"- {desarrolladora_role.name}: {desarrolladora_role.description}")
+        print(f"- {editor_role.name}: {editor_role.description}")
+        print(f"- {superadmin_role.name}: {superadmin_role.description}")
 
 
 async def get_role_by_name(session: AsyncSession, role_name: str) -> Role | None:

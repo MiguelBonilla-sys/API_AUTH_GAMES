@@ -1,6 +1,6 @@
 """
 Modelo Role para el sistema de autenticación.
-Define los roles disponibles: admin (CRUD completo) y user (solo lectura).
+Define los roles disponibles: desarrolladora, editor y superadmin.
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, func
@@ -13,8 +13,9 @@ class Role(Base):
     Modelo Role para control de acceso basado en roles.
     
     Roles disponibles:
-    - admin: Acceso completo a todas las operaciones CRUD
-    - user: Acceso de solo lectura (GET operations únicamente)
+    - desarrolladora: Puede gestionar sus propios videojuegos y desarrolladora
+    - editor: Puede gestionar todos los videojuegos y leer desarrolladoras
+    - superadmin: Acceso completo a todas las operaciones del sistema
     """
     __tablename__ = "roles"
 
