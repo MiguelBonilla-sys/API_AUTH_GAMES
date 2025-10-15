@@ -159,17 +159,6 @@ python Test/Inits/clean_database.py
 pytest Test/ -v
 ```
 
-## Usuarios de Prueba
-
-Después de ejecutar `init_database.py`, tendrás estos usuarios:
-
-| Email | Contraseña | Rol |
-|-------|------------|-----|
-| superadmin@example.com | SuperAdmin123! | superadmin |
-| editor@example.com | EditorPassword123! | editor |
-| desarrolladora1@example.com | DevPassword123! | desarrolladora |
-| desarrolladora2@example.com | DevPassword123! | desarrolladora |
-
 ## Desarrollo
 
 ### Ejecutar Tests
