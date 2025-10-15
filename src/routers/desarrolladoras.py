@@ -10,8 +10,10 @@ from fastapi.responses import JSONResponse
 from src.auth import (
     CurrentUser,
     CurrentSuperadminUser,
+    OptionalCurrentUser,
     get_current_user,
     get_current_superadmin_user,
+    get_optional_current_user,
     has_permission,
     Permissions
 )
@@ -33,7 +35,7 @@ DESARROLLADORA_ID_DESCRIPTION = "ID de la desarrolladora"
     description="Obtiene la lista de desarrolladoras con filtros opcionales"
 )
 async def list_desarrolladoras(
-    current_user: CurrentUser,
+    current_user: OptionalCurrentUser,
     page: Optional[int] = Query(default=1, ge=1, description="Número de página"),
     per_page: Optional[int] = Query(default=10, ge=1, le=100, description="Elementos por página"),
     pais: Optional[str] = Query(default=None, description="Filtrar por país"),
@@ -44,15 +46,10 @@ async def list_desarrolladoras(
 ):
     """
     Listar desarrolladoras con filtros opcionales.
-    Accesible para usuarios admin y user.
+    Acceso público - no requiere autenticación.
     """
     try:
-        # Verificar permiso de lectura
-        if not has_permission(current_user, Permissions.DESARROLLADORA_READ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=NO_PERMISSION_DESARROLLADORAS_MESSAGE
-            )
+        # Endpoint público - no requiere verificación de permisos
         
         # Preparar parámetros
         params = {
@@ -73,7 +70,7 @@ async def list_desarrolladoras(
         return await proxy_service.get(
             endpoint="api/desarrolladoras",
             params=params,
-            user_email=current_user.email
+            user_email=current_user.email if current_user else None
         )
         
     except HTTPException:
