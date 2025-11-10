@@ -4,7 +4,6 @@ Implementa hash y verificación de contraseñas de forma segura.
 """
 
 from passlib.context import CryptContext
-from passlib.hash import bcrypt
 import os
 
 # Configuración de bcrypt
