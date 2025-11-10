@@ -181,10 +181,12 @@ class TestPermissionValidation:
 class TestRoleDecorators:
     """Tests para los decoradores de roles."""
     
-    def test_require_role_decorator_with_valid_role(self):
+    @pytest.mark.asyncio
+    async def test_require_role_decorator_with_valid_role(self):
         """Verificar que require_role permite acceso con rol válido."""
-        # Mock function
-        mock_func = Mock(return_value="success")
+        # Mock function async
+        async def mock_func(user=None):
+            return "success"
         
         # Mock user con rol válido
         role = Mock(spec=Role)
@@ -197,19 +199,20 @@ class TestRoleDecorators:
         # Aplicar decorador
         decorated_func = require_role("desarrolladora")(mock_func)
         
-        # Simular llamada
-        result = decorated_func(user=user)
+        # Simular llamada async
+        result = await decorated_func(user=user)
         
         # Verificar que se ejecutó la función
-        mock_func.assert_called_once_with(user=user)
         assert result == "success"
     
-    def test_require_role_decorator_with_invalid_role(self):
+    @pytest.mark.asyncio
+    async def test_require_role_decorator_with_invalid_role(self):
         """Verificar que require_role deniega acceso con rol inválido."""
         from fastapi import HTTPException
         
-        # Mock function
-        mock_func = Mock(return_value="success")
+        # Mock function async
+        async def mock_func(user=None):
+            return "success"
         
         # Mock user con rol inválido
         role = Mock(spec=Role)
@@ -224,15 +227,17 @@ class TestRoleDecorators:
         
         # Simular llamada - debe lanzar excepción
         with pytest.raises(HTTPException) as exc_info:
-            decorated_func(user=user)
+            await decorated_func(user=user)
         
         assert exc_info.value.status_code == 403
-        assert "No tienes permisos" in str(exc_info.value.detail)
+        assert "Rol requerido" in str(exc_info.value.detail)
     
-    def test_require_desarrolladora_decorator(self):
+    @pytest.mark.asyncio
+    async def test_require_desarrolladora_decorator(self):
         """Verificar decorador require_desarrolladora."""
-        # Mock function
-        mock_func = Mock(return_value="success")
+        # Mock function async
+        async def mock_func(user=None):
+            return "success"
         
         # Mock user con rol desarrolladora
         role = Mock(spec=Role)
@@ -245,17 +250,18 @@ class TestRoleDecorators:
         # Aplicar decorador
         decorated_func = require_desarrolladora(mock_func)
         
-        # Simular llamada
-        result = decorated_func(user=user)
+        # Simular llamada async
+        result = await decorated_func(user=user)
         
         # Verificar que se ejecutó la función
-        mock_func.assert_called_once_with(user=user)
         assert result == "success"
     
-    def test_require_editor_decorator(self):
+    @pytest.mark.asyncio
+    async def test_require_editor_decorator(self):
         """Verificar decorador require_editor."""
-        # Mock function
-        mock_func = Mock(return_value="success")
+        # Mock function async
+        async def mock_func(user=None):
+            return "success"
         
         # Mock user con rol editor
         role = Mock(spec=Role)
@@ -268,17 +274,18 @@ class TestRoleDecorators:
         # Aplicar decorador
         decorated_func = require_editor(mock_func)
         
-        # Simular llamada
-        result = decorated_func(user=user)
+        # Simular llamada async
+        result = await decorated_func(user=user)
         
         # Verificar que se ejecutó la función
-        mock_func.assert_called_once_with(user=user)
         assert result == "success"
     
-    def test_require_superadmin_decorator(self):
+    @pytest.mark.asyncio
+    async def test_require_superadmin_decorator(self):
         """Verificar decorador require_superadmin."""
-        # Mock function
-        mock_func = Mock(return_value="success")
+        # Mock function async
+        async def mock_func(user=None):
+            return "success"
         
         # Mock user con rol superadmin
         role = Mock(spec=Role)
@@ -291,11 +298,10 @@ class TestRoleDecorators:
         # Aplicar decorador
         decorated_func = require_superadmin(mock_func)
         
-        # Simular llamada
-        result = decorated_func(user=user)
+        # Simular llamada async
+        result = await decorated_func(user=user)
         
         # Verificar que se ejecutó la función
-        mock_func.assert_called_once_with(user=user)
         assert result == "success"
 
 

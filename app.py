@@ -15,7 +15,7 @@ from datetime import datetime
 
 from src.config import init_db, close_db
 from src.config.settings import get_settings, is_production, is_development
-from src.routers import auth_router, admin_router, videojuegos_router, desarrolladoras_router
+from src.routers import auth_router, admin_router, videojuegos_router, desarrolladoras_router, sync_logs_router
 from src.schemas import ErrorResponse
 
 # Obtener configuración
@@ -109,6 +109,7 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(videojuegos_router)
 app.include_router(desarrolladoras_router)
+app.include_router(sync_logs_router)
 
 
 @app.get("/", summary="Health Check", description="Verificar estado de la aplicación")

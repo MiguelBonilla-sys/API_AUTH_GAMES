@@ -18,6 +18,8 @@ from .jwt_handler import (
     is_token_expired,
     get_user_id_from_token,
     get_user_role_from_token,
+    create_temp_2fa_token,
+    verify_temp_2fa_token,
     JWTError
 )
 

@@ -194,3 +194,78 @@ def get_user_role_from_token(token: str) -> Optional[str]:
         return payload.get("role")
     except JWTError:
         return None
+
+
+def create_temp_2fa_token(user: User, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Crear token temporal para verificación 2FA.
+    Este token se usa después de validar el primer factor (password).
+    
+    Args:
+        user: Usuario que pasó el primer factor
+        expires_delta: Tiempo de expiración (default: 10 minutos)
+        
+    Returns:
+        Token JWT temporal para 2FA
+    """
+    from src.config import get_settings
+    settings = get_settings()
+    
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.two_factor_token_expiry_minutes)
+    
+    # Usar secret diferente para tokens 2FA si está configurado
+    secret_key = settings.two_factor_secret_key if settings.two_factor_secret_key else JWT_SECRET_KEY
+    
+    payload = {
+        "sub": str(user.id),
+        "email": user.email,
+        "status": "pending_2fa",
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "type": "2fa_temp"  # Tipo de token temporal
+    }
+    
+    return jwt.encode(payload, secret_key, algorithm=JWT_ALGORITHM)
+
+
+def verify_temp_2fa_token(token: str) -> Dict[str, Any]:
+    """
+    Verificar token temporal de 2FA.
+    
+    Args:
+        token: Token temporal de 2FA
+        
+    Returns:
+        Payload decodificado
+        
+    Raises:
+        JWTError: Si el token es inválido
+    """
+    from src.config import get_settings
+    settings = get_settings()
+    
+    # Usar secret diferente para tokens 2FA si está configurado
+    secret_key = settings.two_factor_secret_key if settings.two_factor_secret_key else JWT_SECRET_KEY
+    
+    try:
+        payload = jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
+        
+        # Verificar tipo de token
+        if payload.get("type") != "2fa_temp":
+            raise JWTError("Token type mismatch. Expected 2fa_temp")
+        
+        # Verificar status
+        if payload.get("status") != "pending_2fa":
+            raise JWTError("Invalid 2FA token status")
+        
+        return payload
+        
+    except ExpiredSignatureError:
+        raise JWTError("2FA token has expired")
+    except DecodeError:
+        raise JWTError("Invalid 2FA token format")
+    except InvalidTokenError as e:
+        raise JWTError(f"Invalid 2FA token: {str(e)}")

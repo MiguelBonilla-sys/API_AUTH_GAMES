@@ -4,7 +4,7 @@ Reenvía requests autenticados a la API Flask existente con restricciones por ro
 """
 
 from typing import Optional, Dict, Any, Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path, Body
 from fastapi.responses import JSONResponse
 
 from src.auth import (
@@ -590,45 +590,41 @@ async def delete_videojuego(
 
 @router.get(
     "/buscar/",
-    summary="Búsqueda avanzada",
-    description="""Búsqueda avanzada de videojuegos con múltiples criterios de filtrado.
+    summary="Búsqueda híbrida (local + RAWG)",
+    description="""Búsqueda híbrida de videojuegos en la base de datos local y opcionalmente en RAWG API.
     
-    **Filtros disponibles:**
-    - `nombre`: Buscar por nombre del videojuego
-    - `categoria`: Filtrar por categoría específica
-    - `desarrolladora`: Filtrar por nombre de desarrolladora
-    - `precio_min` y `precio_max`: Rango de precios
-    - `valoracion_min` y `valoracion_max`: Rango de valoraciones (0-10)
-    - `fecha_lanzamiento_desde` y `fecha_lanzamiento_hasta`: Rango de fechas (YYYY-MM-DD)
+    **Parámetros requeridos:**
+    - `q`: Término de búsqueda (requerido)
+    
+    **Parámetros opcionales:**
+    - `include_external`: Incluir resultados de RAWG (default: true)
     
     **Ejemplo de uso:**
     ```
-    GET /api/videojuegos/buscar/?categoria=RPG&precio_min=20&precio_max=60&valoracion_min=8.0
+    GET /api/videojuegos/buscar/?q=zelda&include_external=true
     ```
     
     **Respuesta esperada:**
     ```json
     {
         "success": true,
-        "message": "Búsqueda avanzada realizada exitosamente con filtros: categoría: RPG, precio mín: $20.0",
-        "data": [...],
-        "count": 3,
-        "timestamp": "2024-01-15T10:30:00Z"
+        "message": "Búsqueda completada: 2 locales, 5 externos",
+        "data": {
+            "local": [...],
+            "external": [...]
+        },
+        "count": 7
     }
     ```
     """,
     response_model=VideojuegoListResponse,
     responses={
         200: {
-            "description": "Búsqueda avanzada realizada exitosamente",
+            "description": "Búsqueda híbrida realizada exitosamente",
             "model": VideojuegoListResponse
         },
         400: {
-            "description": "Error en los parámetros de búsqueda",
-            "model": VideojuegoErrorResponse
-        },
-        403: {
-            "description": "No tienes permisos para leer videojuegos",
+            "description": "Error en los parámetros de búsqueda (q es requerido)",
             "model": VideojuegoErrorResponse
         },
         500: {
@@ -639,50 +635,269 @@ async def delete_videojuego(
 )
 async def buscar_videojuegos(
     current_user: OptionalCurrentUser,
-    nombre: Optional[str] = Query(default=None, description="Nombre del videojuego", example="zelda"),
-    categoria: Optional[str] = Query(default=None, description="Categoría", example="RPG"),
-    desarrolladora: Optional[str] = Query(default=None, description="Desarrolladora", example="Nintendo"),
-    precio_min: Optional[float] = Query(default=None, ge=0, description="Precio mínimo", example=10.0),
-    precio_max: Optional[float] = Query(default=None, ge=0, description="Precio máximo", example=60.0),
-    valoracion_min: Optional[float] = Query(default=None, ge=0, le=10, description="Valoración mínima", example=8.0),
-    valoracion_max: Optional[float] = Query(default=None, ge=0, le=10, description="Valoración máxima", example=10.0),
-    fecha_lanzamiento_desde: Optional[str] = Query(default=None, description="Fecha de lanzamiento desde (YYYY-MM-DD)", example="2020-01-01"),
-    fecha_lanzamiento_hasta: Optional[str] = Query(default=None, description="Fecha de lanzamiento hasta (YYYY-MM-DD)", example="2024-12-31"),
+    q: str = Query(..., description="Término de búsqueda", example="zelda"),
+    include_external: Optional[bool] = Query(default=True, description="Incluir resultados de RAWG", example=True),
     proxy_service: ProxyService = Depends(get_proxy_service)
 ):
     """
-    Búsqueda avanzada de videojuegos.
+    Búsqueda híbrida de videojuegos (local + RAWG).
     Acceso público - no requiere autenticación.
     """
     try:
         # Endpoint público - no requiere verificación de permisos
         
         # Preparar parámetros
-        params = {}
-        
-        if nombre:
-            params["nombre"] = nombre
-        if categoria:
-            params["categoria"] = categoria
-        if desarrolladora:
-            params["desarrolladora"] = desarrolladora
-        if precio_min is not None:
-            params["precio_min"] = precio_min
-        if precio_max is not None:
-            params["precio_max"] = precio_max
-        if valoracion_min is not None:
-            params["valoracion_min"] = valoracion_min
-        if valoracion_max is not None:
-            params["valoracion_max"] = valoracion_max
-        if fecha_lanzamiento_desde:
-            params["fecha_lanzamiento_desde"] = fecha_lanzamiento_desde
-        if fecha_lanzamiento_hasta:
-            params["fecha_lanzamiento_hasta"] = fecha_lanzamiento_hasta
+        params = {
+            "q": q,
+            "include_external": include_external
+        }
         
         # Reenviar request a la API Flask
         return await proxy_service.get(
             endpoint="api/videojuegos/buscar",
             params=params,
+            user_email=current_user.email if current_user else None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+
+
+@router.post(
+    "/importar-batch/",
+    summary="Importar videojuegos desde RAWG",
+    description="""Importa videojuegos desde RAWG API. Si no se proporcionan juegos en el body, importa automáticamente juegos populares evitando los que ya existen.
+    
+    **Query parameters:**
+    - `count`: Cantidad de juegos populares a importar (default: 6, min: 1, max: 50). Solo aplica si no se proporcionan juegos en el body.
+    
+    **Body opcional:**
+    ```json
+    {
+        "games": [
+            {"external_id": "3328"},
+            {"external_id": "3498"}
+        ]
+    }
+    ```
+    
+    **Ejemplos de uso:**
+    - Sin parámetros (importa 6 juegos populares): `POST /api/videojuegos/importar-batch/` con body `{}`
+    - Con count: `POST /api/videojuegos/importar-batch/?count=10` con body `{}`
+    - Con juegos específicos: `POST /api/videojuegos/importar-batch/` con body `{"games": [{"external_id": "3328"}]}`
+    
+    **Respuesta:**
+    ```json
+    {
+        "success": true,
+        "message": "Importación completada: 5 exitosos, 1 fallidos, 0 omitidos",
+        "data": {
+            "success": [...],
+            "failed": [...],
+            "skipped": [...]
+        }
+    }
+    ```
+    """,
+    responses={
+        201: {
+            "description": "Juegos importados exitosamente",
+        },
+        207: {
+            "description": "Multi-Status: algunos exitosos, algunos fallidos",
+        },
+        400: {
+            "description": "Error en la validación de datos",
+            "model": VideojuegoErrorResponse
+        },
+        403: {
+            "description": "No tienes permisos para importar videojuegos",
+            "model": VideojuegoErrorResponse
+        },
+        500: {
+            "description": "Error interno del servidor",
+            "model": VideojuegoErrorResponse
+        }
+    }
+)
+async def importar_batch_videojuegos(
+    current_user: CurrentUser,
+    count: Optional[int] = Query(default=6, ge=1, le=50, description="Cantidad de juegos populares a importar", example=6),
+    body: Optional[Dict[str, Any]] = Body(default=None, description="Lista de juegos a importar (opcional)"),
+    proxy_service: ProxyService = Depends(get_proxy_service)
+):
+    """
+    Importar videojuegos desde RAWG API.
+    Solo accesible para editores y superadministradores.
+    """
+    try:
+        # Verificar permiso de creación
+        if not has_permission(current_user, Permissions.VIDEOJUEGO_CREATE):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para importar videojuegos"
+            )
+        
+        # Preparar body (si no se proporciona, usar objeto vacío)
+        json_data = body if body else {}
+        
+        # Agregar count como query param en la URL
+        params = {"count": count}
+        
+        # Reenviar request a la API Flask
+        return await proxy_service.forward_request(
+            method="POST",
+            endpoint="api/videojuegos/importar-batch",
+            params=params,
+            json_data=json_data,
+            user_email=current_user.email
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+
+
+@router.get(
+    "/{videojuego_id}/enriquecido/",
+    summary="Obtener videojuego enriquecido",
+    description="""Obtiene un videojuego con datos adicionales de RAWG (screenshots, plataformas, tags).
+    
+    **Parámetros:**
+    - `videojuego_id`: ID del videojuego (entero positivo)
+    
+    **Ejemplo de uso:**
+    ```
+    GET /api/videojuegos/1/enriquecido/
+    ```
+    
+    **Respuesta esperada:**
+    ```json
+    {
+        "success": true,
+        "message": "Juego enriquecido obtenido exitosamente",
+        "data": {
+            "id": 1,
+            "nombre": "The Legend of Zelda: Breath of the Wild",
+            "plataformas": ["Nintendo Switch", "Wii U"],
+            "screenshots": ["url1", "url2"],
+            "tags": ["Action", "Adventure", "RPG"]
+        }
+    }
+    ```
+    """,
+    response_model=VideojuegoDetailResponse,
+    responses={
+        200: {
+            "description": "Videojuego enriquecido obtenido exitosamente",
+            "model": VideojuegoDetailResponse
+        },
+        404: {
+            "description": "Videojuego no encontrado",
+            "model": VideojuegoNotFoundResponse
+        },
+        500: {
+            "description": "Error interno del servidor",
+            "model": VideojuegoErrorResponse
+        }
+    }
+)
+async def get_videojuego_enriquecido(
+    current_user: OptionalCurrentUser,
+    videojuego_id: int = Path(description=VIDEOJUEGO_ID_DESCRIPTION, example=1),
+    proxy_service: ProxyService = Depends(get_proxy_service)
+):
+    """
+    Obtener videojuego con datos enriquecidos de RAWG.
+    Acceso público - no requiere autenticación.
+    """
+    try:
+        # Endpoint público - no requiere verificación de permisos
+        
+        # Reenviar request a la API Flask
+        return await proxy_service.get(
+            endpoint=f"api/videojuegos/{videojuego_id}/enriquecido",
+            user_email=current_user.email if current_user else None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+
+
+@router.get(
+    "/sync-status/{task_id}/",
+    summary="Estado de sincronización",
+    description="""Consulta el estado de una tarea de sincronización asíncrona.
+    
+    **Parámetros:**
+    - `task_id`: ID de la tarea de Celery (string)
+    
+    **Ejemplo de uso:**
+    ```
+    GET /api/videojuegos/sync-status/abc123-def456-ghi789/
+    ```
+    
+    **Respuesta esperada:**
+    ```json
+    {
+        "success": true,
+        "message": "Task en cola",
+        "data": {
+            "status": "pending",
+            "message": "Task en cola"
+        }
+    }
+    ```
+    
+    **Estados posibles:**
+    - `pending`: Tarea en cola
+    - `running`: Sincronización en progreso
+    - `completed`: Sincronización completada exitosamente
+    - `failed`: Sincronización fallida
+    """,
+    responses={
+        200: {
+            "description": "Estado de sincronización obtenido exitosamente",
+        },
+        404: {
+            "description": "Tarea no encontrada",
+            "model": VideojuegoErrorResponse
+        },
+        500: {
+            "description": "Error interno del servidor",
+            "model": VideojuegoErrorResponse
+        }
+    }
+)
+async def get_sync_status(
+    current_user: OptionalCurrentUser,
+    task_id: str = Path(description="ID de la tarea de sincronización", example="abc123-def456-ghi789"),
+    proxy_service: ProxyService = Depends(get_proxy_service)
+):
+    """
+    Consultar estado de sincronización.
+    Acceso público - no requiere autenticación.
+    """
+    try:
+        # Endpoint público - no requiere verificación de permisos
+        
+        # Reenviar request a la API Flask
+        return await proxy_service.get(
+            endpoint=f"api/videojuegos/sync-status/{task_id}",
             user_email=current_user.email if current_user else None
         )
         
