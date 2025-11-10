@@ -150,7 +150,7 @@ def has_permission(user: User, permission: Permission) -> bool:
     Returns:
         True si el usuario tiene el permiso, False en caso contrario
     """
-    if not user or not user.role:
+    if not user or not user.role or not user.is_active:
         return False
     
     user_permissions = ROLE_PERMISSIONS.get(user.role.name, [])

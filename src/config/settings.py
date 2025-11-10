@@ -66,6 +66,38 @@ class Settings(BaseSettings):
     rate_limit_requests: int = Field(default=100, description="Número de requests por minuto")
     rate_limit_window: int = Field(default=60, description="Ventana de tiempo para rate limiting en segundos")
     
+    # Configuración de Keycloak
+    keycloak_server_url: str = Field(
+        default="https://keycloak-production-a4e7.up.railway.app",
+        description="URL del servidor Keycloak"
+    )
+    keycloak_realm: str = Field(
+        default="master",
+        description="Realm de Keycloak"
+    )
+    keycloak_client_id: str = Field(
+        default="api-gateway-2fa-service",
+        description="Client ID de Keycloak"
+    )
+    keycloak_client_secret: str = Field(
+        default="",
+        description="Client Secret de Keycloak"
+    )
+    
+    # Configuración 2FA
+    two_factor_secret_key: str = Field(
+        default="",
+        description="Secret para tokens temporales de 2FA"
+    )
+    two_factor_token_expiry_minutes: int = Field(
+        default=10,
+        description="Expiración de token temporal 2FA en minutos"
+    )
+    two_factor_max_attempts: int = Field(
+        default=5,
+        description="Máximo de intentos fallidos de OTP"
+    )
+    
     @validator('environment')
     def validate_environment(cls, v):
         """Validar entorno de ejecución."""
@@ -79,6 +111,13 @@ class Settings(BaseSettings):
         """Validar clave secreta JWT."""
         if len(v) < 32:
             raise ValueError('JWT secret key must be at least 32 characters long')
+        return v
+    
+    @validator('two_factor_secret_key')
+    def validate_two_factor_secret(cls, v):
+        """Validar secret para tokens 2FA."""
+        if v and len(v) < 32:
+            raise ValueError('Two factor secret key must be at least 32 characters long')
         return v
     
     @validator('log_level')

@@ -272,3 +272,58 @@ class TokenInfoResponse(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+
+
+# ===== SCHEMAS PARA 2FA =====
+
+class Verify2FARequest(BaseModel):
+    """
+    Schema para solicitud de verificación de código OTP.
+    """
+    temp_token: str = Field(description="Token temporal obtenido después del primer factor")
+    otp_code: str = Field(min_length=6, max_length=6, description="Código OTP de 6 dígitos")
+    challenge_id: Optional[str] = Field(default=None, description="ID del desafío 2FA")
+    
+    @validator('otp_code')
+    def validate_otp_code(cls, v):
+        """Validar que el código OTP sea numérico y tenga 6 dígitos."""
+        if not v.isdigit():
+            raise ValueError('El código OTP debe contener solo números')
+        if len(v) != 6:
+            raise ValueError('El código OTP debe tener exactamente 6 dígitos')
+        return v
+
+
+class Enable2FAResponse(BaseModel):
+    """
+    Schema para respuesta de habilitación de 2FA.
+    """
+    qr_code: Optional[str] = Field(description="URL o data URI del código QR")
+    manual_entry_key: Optional[str] = Field(description="Clave para entrada manual")
+    secret: Optional[str] = Field(description="Secret OTP (solo para debugging)")
+    message: str = Field(description="Instrucciones para el usuario")
+
+
+class TwoFactorStatusResponse(BaseModel):
+    """
+    Schema para estado de 2FA del usuario.
+    """
+    two_factor_enabled: bool = Field(description="Si 2FA está habilitado")
+    two_factor_method: Optional[str] = Field(description="Método de 2FA (totp, sms, etc.)")
+    two_factor_configured_at: Optional[datetime] = Field(description="Fecha de configuración")
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+
+class Login2FAResponse(BaseModel):
+    """
+    Schema para respuesta de login cuando se requiere 2FA.
+    """
+    requires_2fa: bool = Field(default=True, description="Indica que se requiere 2FA")
+    temp_token: str = Field(description="Token temporal para verificación 2FA")
+    challenge_id: Optional[str] = Field(description="ID del desafío 2FA")
+    expires_in: int = Field(description="Tiempo de expiración del token temporal en segundos")
+    message: str = Field(description="Mensaje informativo")

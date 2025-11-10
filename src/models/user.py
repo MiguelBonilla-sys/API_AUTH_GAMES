@@ -5,6 +5,7 @@ Maneja usuarios con roles y autenticación JWT.
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
+from typing import Optional
 from src.config.database import Base
 
 
@@ -18,6 +19,10 @@ class User(Base):
     - password_hash: Hash de la contraseña (bcrypt)
     - role_id: Referencia al rol del usuario
     - is_active: Estado activo/inactivo del usuario
+    - two_factor_enabled: Si 2FA está habilitado
+    - two_factor_method: Método de 2FA (totp, sms, etc.)
+    - keycloak_user_id: UUID del usuario en Keycloak
+    - two_factor_configured_at: Fecha de configuración de 2FA
     - created_at: Fecha de creación
     - updated_at: Fecha de última actualización
     """
@@ -28,6 +33,13 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Campos de 2FA
+    two_factor_enabled = Column(Boolean, default=False, nullable=False)
+    two_factor_method = Column(String(50), nullable=True)  # 'totp', 'sms', etc.
+    keycloak_user_id = Column(String(36), nullable=True, index=True)  # UUID de Keycloak
+    two_factor_configured_at = Column(DateTime(timezone=True), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

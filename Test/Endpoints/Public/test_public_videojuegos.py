@@ -113,19 +113,31 @@ class TestPublicVideojuegosEndpoints:
     
     def test_search_videojuegos_public_access(self, client, mock_proxy_service):
         """Verificar que GET /api/videojuegos/buscar/ es accesible sin token."""
-        mock_proxy_service.get.return_value = {
+        # La respuesta de FlaskAPI tiene estructura {local: [], external: []}
+        from fastapi.responses import JSONResponse
+        
+        mock_response_data = {
             "success": True,
-            "data": [
-                {
-                    "id": 1,
-                    "titulo": "Test Game",
-                    "desarrolladora": "Test Dev",
-                    "categoria": "Action",
-                    "precio": 29.99
-                }
-            ],
+            "data": {
+                "local": [
+                    {
+                        "id": 1,
+                        "titulo": "Test Game",
+                        "desarrolladora": "Test Dev",
+                        "categoria": "Action",
+                        "precio": 29.99
+                    }
+                ],
+                "external": []
+            },
             "count": 1
         }
+        
+        # Configurar el mock para retornar un JSONResponse
+        async def mock_get(*args, **kwargs):
+            return JSONResponse(content=mock_response_data)
+        
+        mock_proxy_service.get = mock_get
         
         with patch('src.services.get_proxy_service', return_value=mock_proxy_service):
             response = client.get("/api/videojuegos/buscar/?q=test")
@@ -133,7 +145,10 @@ class TestPublicVideojuegosEndpoints:
             assert response.status_code == 200
             data = response.json()
             assert data["success"] is True
-            assert len(data["data"]) == 1
+            # Verificar que tiene la estructura correcta con local y external
+            assert "local" in data["data"]
+            assert "external" in data["data"]
+            assert len(data["data"]["local"]) == 1
 
 
 class TestProtectedVideojuegosEndpoints:

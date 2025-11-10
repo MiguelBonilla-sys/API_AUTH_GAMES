@@ -37,7 +37,13 @@ from .auth import (
     
     # Utility schemas
     PasswordStrengthResponse,
-    TokenInfoResponse
+    TokenInfoResponse,
+    
+    # 2FA schemas
+    Verify2FARequest,
+    Enable2FAResponse,
+    TwoFactorStatusResponse,
+    Login2FAResponse
 )
 
 # Schemas de usuarios
@@ -141,6 +147,12 @@ __all__ = [
     # Auth utility schemas
     "PasswordStrengthResponse",
     "TokenInfoResponse",
+    
+    # 2FA schemas
+    "Verify2FARequest",
+    "Enable2FAResponse",
+    "TwoFactorStatusResponse",
+    "Login2FAResponse",
     
     # User request schemas
     "UserCreateRequest",

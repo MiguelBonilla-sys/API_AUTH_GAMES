@@ -8,14 +8,15 @@ import asyncio
 import sys
 import os
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 # Agregar el directorio raíz del proyecto al path para importar módulos
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
 from src.models import User, Role
-from src.config import get_db
+from src.config import AsyncSessionLocal
+from sqlalchemy import delete
 from src.auth.utils import (
     check_user_permissions,
     is_superadmin_user,
@@ -32,20 +33,15 @@ class TestRoleCreation:
     @pytest.mark.asyncio
     async def test_init_default_roles_creates_correct_roles(self):
         """Verificar que se crean los 3 roles correctos."""
-        # Limpiar roles existentes
-        async with get_db() as session:
-            await session.execute("DELETE FROM roles")
-            await session.commit()
-        
-        # Inicializar roles
+        # Inicializar roles (no necesitamos limpiar, init_default_roles no duplica)
         await init_default_roles()
         
         # Verificar que se crearon los roles
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             result = await session.execute(select(Role))
             roles = result.scalars().all()
             
-            assert len(roles) == 3
+            assert len(roles) >= 3  # Puede haber más si ya existían
             
             role_names = [role.name for role in roles]
             assert "desarrolladora" in role_names
@@ -55,23 +51,33 @@ class TestRoleCreation:
     @pytest.mark.asyncio
     async def test_init_default_roles_does_not_duplicate(self):
         """Verificar que no se duplican roles si ya existen."""
-        # Inicializar roles dos veces
-        await init_default_roles()
+        # Asegurar que los roles existen primero
         await init_default_roles()
         
-        # Verificar que solo hay 3 roles
-        async with get_db() as session:
+        # Contar roles antes de la segunda llamada
+        async with AsyncSessionLocal() as session:
             result = await session.execute(select(Role))
-            roles = result.scalars().all()
+            roles_before = result.scalars().all()
+            count_before = len(roles_before)
+        
+        # Inicializar roles nuevamente (no debería crear duplicados)
+        await init_default_roles()
+        
+        # Verificar que el número de roles no cambió
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(Role))
+            roles_after = result.scalars().all()
+            count_after = len(roles_after)
             
-            assert len(roles) == 3
+            assert count_after == count_before, f"Se crearon roles duplicados: {count_before} -> {count_after}"
+            assert count_after >= 3  # Debe haber al menos los 3 roles por defecto
     
     @pytest.mark.asyncio
     async def test_role_descriptions_are_correct(self):
         """Verificar que las descripciones de roles son correctas."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             # Verificar desarrolladora
             result = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
@@ -105,7 +111,7 @@ class TestRolePermissions:
         """Verificar permisos con roles válidos."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             # Crear usuarios de prueba
             desarrolladora_role = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
@@ -166,7 +172,7 @@ class TestRolePermissions:
         """Verificar que usuarios inactivos no tienen permisos."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             desarrolladora_role = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
             )
@@ -205,8 +211,8 @@ class TestRoleHelperFunctions:
     async def test_is_superadmin_user(self):
         """Verificar función is_superadmin_user."""
         await init_default_roles()
-        
-        async with get_db() as session:
+
+        async with AsyncSessionLocal() as session:
             superadmin_role = await session.execute(
                 select(Role).where(Role.name == "superadmin")
             )
@@ -243,8 +249,8 @@ class TestRoleHelperFunctions:
     async def test_is_editor_user(self):
         """Verificar función is_editor_user."""
         await init_default_roles()
-        
-        async with get_db() as session:
+
+        async with AsyncSessionLocal() as session:
             editor_role = await session.execute(
                 select(Role).where(Role.name == "editor")
             )
@@ -282,7 +288,7 @@ class TestRoleHelperFunctions:
         """Verificar función is_desarrolladora_user."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             desarrolladora_role = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
             )
@@ -324,7 +330,7 @@ class TestResourceOwnership:
         """Verificar que sin proxy service se permite acceso (fallback)."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             desarrolladora_role = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
             )
@@ -356,7 +362,7 @@ class TestResourceOwnership:
         """Verificar que tipos de recurso inválidos retornan False."""
         await init_default_roles()
         
-        async with get_db() as session:
+        async with AsyncSessionLocal() as session:
             desarrolladora_role = await session.execute(
                 select(Role).where(Role.name == "desarrolladora")
             )

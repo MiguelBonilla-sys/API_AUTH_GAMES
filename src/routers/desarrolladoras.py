@@ -414,3 +414,64 @@ async def get_videojuegos_desarrolladora(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error interno del servidor: {str(e)}"
         )
+
+
+@router.get(
+    "/{desarrolladora_id}/estadisticas/",
+    summary="Estadísticas de desarrolladora",
+    description="""Obtiene estadísticas específicas de una desarrolladora.
+    
+    **Parámetros:**
+    - `desarrolladora_id`: ID de la desarrolladora (entero positivo)
+    
+    **Ejemplo de uso:**
+    ```
+    GET /api/desarrolladoras/1/estadisticas/
+    ```
+    
+    **Respuesta esperada:**
+    ```json
+    {
+        "success": true,
+        "message": "Estadísticas de la desarrolladora obtenidas exitosamente",
+        "data": {
+            "desarrolladora": {...},
+            "total_videojuegos": 5,
+            "precio_promedio": 45.99,
+            "valoracion_promedio": 8.5,
+            "categorias_desarrolladas": ["RPG", "Aventura", "Acción"]
+        }
+    }
+    ```
+    """
+)
+async def get_estadisticas_desarrolladora(
+    current_user: CurrentUser,
+    desarrolladora_id: int = Path(description=DESARROLLADORA_ID_DESCRIPTION),
+    proxy_service: ProxyService = Depends(get_proxy_service)
+):
+    """
+    Obtener estadísticas específicas de una desarrolladora.
+    Accesible para usuarios admin y user.
+    """
+    try:
+        # Verificar permiso de lectura
+        if not has_permission(current_user, Permissions.DESARROLLADORA_READ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=NO_PERMISSION_DESARROLLADORAS_MESSAGE
+            )
+        
+        # Reenviar request a la API Flask
+        return await proxy_service.get(
+            endpoint=f"/api/desarrolladoras/{desarrolladora_id}/estadisticas/",
+            user_email=current_user.email
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
